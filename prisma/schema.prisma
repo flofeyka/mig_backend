@@ -19,6 +19,29 @@ model User {
   login    String  @unique
   password String
   token    Token?
+  events   Event[]
+  eventId  String?
+}
+
+model Media {
+  id          String   @id @default(cuid())
+  filename    String   @unique
+  fullVersion String   @unique
+  preview     String   @unique
+  createdAt   DateTime @default(now())
+  event       Event    @relation(fields: [eventId], references: [id])
+  eventId     String
+}
+
+model Event {
+  id        String   @id @default(cuid())
+  name      String
+  date      DateTime
+  media     Media[]
+  price     Int
+  buyers    User[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Token {
