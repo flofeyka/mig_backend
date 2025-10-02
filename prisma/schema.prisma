@@ -20,7 +20,7 @@ model User {
   password String
   token    Token?
   events   Event[]
-  eventId  String?
+  isAdmin  Boolean @default(false)
 }
 
 model Media {

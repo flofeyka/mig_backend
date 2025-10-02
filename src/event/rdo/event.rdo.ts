@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Media } from '@prisma/client';
 import { Expose } from 'class-transformer';
 import { IsDateString, IsNumber, IsOptional, IsString } from 'class-validator';
+import { MediaRdo } from '../media/rdo/media.rdo';
 
 export class EventRdo {
   @ApiProperty({ title: 'ID', example: 'cmgas45bsfdgq33g' })
@@ -33,7 +34,12 @@ export class EventRdo {
 
   @ApiProperty({ title: 'Media', required: false })
   @Expose()
-  media: Media[];
+  media: MediaRdo;
+
+  @ApiProperty({ title: 'Total media', example: 5 })
+  @IsNumber()
+  @Expose()
+  totalMedia: number;
 
   @ApiProperty({ title: 'Created at date', example: '' })
   @Expose()
