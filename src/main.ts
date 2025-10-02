@@ -11,6 +11,10 @@ async function bootstrap() {
     .setDescription('The MIG API documentation')
     .build();
 
+  app.enableCors({
+    origin: process.env.NODE_ENV === 'development' ? true : 'fotomig.net',
+  });
+
   const documentFactory = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('/api/docs', app, documentFactory);
 

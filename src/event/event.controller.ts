@@ -6,6 +6,7 @@ import {
   NotFoundException,
   Param,
   Post,
+  Put,
   Query,
   UploadedFiles,
   UseInterceptors,
@@ -43,7 +44,7 @@ export class EventController {
   @ApiOperation({ summary: 'Update an event by id' })
   @ApiOkResponse({ type: EventRdo })
   @UseInterceptors(FilesInterceptor('media'))
-  @Post('/')
+  @Put('/:id')
   updateEvent(
     @Param('id') id: string,
     @Body() dto: UpdateEventDto,
