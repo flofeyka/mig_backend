@@ -14,12 +14,13 @@ import { EventsRdo } from './rdo/events.rdo';
 import * as fs from 'fs';
 import path from 'path';
 import { Prisma } from '@prisma/client';
+import { MediaService } from './media/media.service';
 
 @Injectable()
 export class EventService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly storageService: StorageService,
+    private readonly mediaService: MediaService,
   ) {}
 
   async createEvent(
@@ -41,7 +42,7 @@ export class EventService {
         data: {
           media: {
             createMany: {
-              data: await this.uploadFiles(event.id, files),
+              data: await this.mediaService.uploadFiles(event.id, files),
             },
           },
         },
@@ -51,7 +52,7 @@ export class EventService {
       });
     }
 
-    return event as EventRdo;
+    return fillDto(EventRdo, event);
   }
 
   async updateEvent(
@@ -78,7 +79,11 @@ export class EventService {
           date,
           media: {
             createMany: {
-              data: await this.uploadFiles(id, files, lastMedia?.order),
+              data: await this.mediaService.uploadFiles(
+                id,
+                files,
+                lastMedia?.order,
+              ),
               skipDuplicates: true,
             },
           },
@@ -88,7 +93,7 @@ export class EventService {
         },
       });
 
-      return event as EventRdo;
+      return fillDto(EventRdo, event);
     } catch (e) {
       console.error(e);
       throw new NotFoundException('Event not found');
@@ -106,7 +111,7 @@ export class EventService {
     }
   }
 
-  async fetchEvents(dto: PageDto): Promise<EventsRdo> {
+  async fetchEvents(dto: PageDto, hasUserAccess: boolean): Promise<EventsRdo> {
     const { page = '1', limit = '15' } = dto;
     const where = {};
 
@@ -119,6 +124,13 @@ export class EventService {
         include: {
           media: {
             take: 5,
+            select: {
+              id: true,
+              eventId: true,
+              preview: true,
+              order: true,
+              fullVersion: hasUserAccess,
+            },
           },
         },
       }),
@@ -127,75 +139,63 @@ export class EventService {
     return fillDto(EventsRdo, { events, total });
   }
 
-  private async fixOrder() {}
+  async buyEvent(id: string, userId: number): Promise<SuccessRdo> {
+    try {
+      await this.prisma.event.update({
+        where: { id },
+        data: { buyers: { connect: { id: userId } } },
+      });
 
-  private async processPreviewImage(fileBuffer: Buffer): Promise<Buffer> {
-    const image = sharp(fileBuffer);
-    const metadata = await image.metadata();
-    const imgWidth = metadata.width || 800;
-    const imgHeight = metadata.height || 600;
-
-    const watermarkPath = path.join(
-      process.cwd(),
-      'common',
-      'assets',
-      'watermark.png',
-    );
-    const watermarkBuffer = await sharp(fs.readFileSync(watermarkPath))
-      .resize({ height: Math.floor(imgHeight / 16) })
-      .toBuffer();
-    const watermarkMetadata = await sharp(watermarkBuffer).metadata();
-    const watermarkWidth = watermarkMetadata.width || 100;
-    const watermarkHeight = watermarkMetadata.height || 100;
-
-    const compositeLayers: sharp.OverlayOptions[] = [];
-
-    for (let y = 0; y < imgHeight; y += watermarkHeight) {
-      for (let x = 0; x < imgWidth; x += watermarkWidth) {
-        compositeLayers.push({
-          input: watermarkBuffer,
-          top: y,
-          left: x,
-          blend: 'overlay',
-        });
-      }
+      return fillDto(SuccessRdo, { success: true });
+    } catch (e) {
+      console.error(e);
+      throw new NotFoundException('Event not found');
     }
-
-    const outputBuffer = await image.composite(compositeLayers).toBuffer();
-
-    return outputBuffer;
   }
 
-  private async uploadFiles(
+  async fetchEvent(
     id: string,
-    files: Express.Multer.File[],
-    prevIndex: number = 0,
-  ) {
-    return await Promise.all(
-      files.map(async (mediaFile, index: number) => {
-        const currentIndex = prevIndex + index + 1;
-        const filename = String(currentIndex) + '-' + uuid() + '.' + 'png';
-        const [preview, fullVersion] = await Promise.all([
-          this.storageService.uploadFile(
-            await this.processPreviewImage(mediaFile.buffer),
-            filename,
-            {
-              folder: `/preview/${id}`,
-              storageType: StorageType.S3_PUBLIC,
+    dto: PageDto,
+    hasUserAccess: boolean,
+  ): Promise<EventRdo> {
+    const { page = '1', limit = '15' } = dto;
+    const where = { id };
+
+    const [totalMedia, event] = await Promise.all([
+      this.prisma.media.count({ where: { eventId: id } }),
+      this.prisma.event.findUnique({
+        where,
+        include: {
+          media: {
+            skip: (+page - 1) * +limit,
+            take: +limit,
+            select: {
+              id: true,
+              eventId: true,
+              preview: true,
+              order: true,
+              fullVersion: hasUserAccess,
             },
-          ),
-          this.storageService.uploadFile(mediaFile.buffer, filename, {
-            folder: `/original/${id}`,
-            storageType: StorageType.S3_PUBLIC,
-          }),
-        ]);
-        return {
-          filename,
-          fullVersion,
-          order: currentIndex,
-          preview,
-        };
+          },
+        },
       }),
-    );
+    ]);
+
+    if (!event) {
+      throw new NotFoundException('Event not found');
+    }
+
+    return fillDto(EventRdo, { ...event, totalMedia });
+  }
+
+  async checkUserAccess(userId: number, eventId: string): Promise<boolean> {
+    const isUserHasAccess = await this.prisma.user.count({
+      where: {
+        id: userId,
+        OR: [{ events: { some: { id: eventId } } }, { isAdmin: true }],
+      },
+    });
+
+    return isUserHasAccess > 0;
   }
 }
