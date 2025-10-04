@@ -1,41 +1,34 @@
-# --- Development Stage ---
-FROM node:22-alpine AS development
+# --- Development / Build Stage ---
+FROM node:22-alpine AS build
 
 WORKDIR /usr/src/app
 
-COPY package*.json ./
-COPY yarn*.lock ./
-
-RUN yarn install
+COPY package*.json yarn*.lock ./
+RUN yarn install --frozen-lockfile
 
 COPY . .
 
+# Prisma (если используешь)
 RUN yarn prisma generate
-RUN yarn prisma migrate deploy
-
-RUN yarn run build
+RUN yarn build
 
 # --- Production Stage ---
 FROM node:22-alpine AS production
 
-ARG NODE_ENV=production
-ENV NODE_ENV=${NODE_ENV}
-
 WORKDIR /usr/src/app
 
-COPY package*.json ./
-COPY yarn*.lock ./
+ENV NODE_ENV=production
 
-RUN yarn install --production
+# Только прод-зависимости
+COPY package*.json yarn*.lock ./
+RUN yarn install --production --frozen-lockfile
 
-COPY . .
-
-# ✅ Добавить Prisma клиент
-COPY --from=development /usr/src/app/node_modules/.prisma /usr/src/app/node_modules/.prisma
-COPY --from=development /usr/src/app/node_modules/@prisma /usr/src/app/node_modules/@prisma
-
-COPY --from=development /usr/src/app/dist ./dist
+# Копируем только нужное из builder'а
+COPY --from=build /usr/src/app/dist ./dist
+COPY --from=build /usr/src/app/prisma ./prisma
+COPY --from=build /usr/src/app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=build /usr/src/app/node_modules/@prisma ./node_modules/@prisma
 
 EXPOSE 3000
 
-CMD ["yarn", "run", "start:prod"]
+CMD ["node", "dist/main.js"]
