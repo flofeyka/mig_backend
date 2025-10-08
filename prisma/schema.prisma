@@ -14,13 +14,16 @@ datasource db {
 }
 
 model User {
-  id       Int     @id @default(autoincrement())
-  email    String? @unique
-  login    String  @unique
+  id       Int      @id @default(autoincrement())
+  email    String?  @unique
+  login    String   @unique
   password String
   token    Token?
   events   Event[]
-  isAdmin  Boolean @default(false)
+  isAdmin  Boolean  @default(false)
+  members  Member[]
+  Media    Media?   @relation(fields: [mediaId], references: [id])
+  mediaId  String?
 }
 
 model Media {
@@ -29,20 +32,50 @@ model Media {
   fullVersion String   @unique
   preview     String   @unique
   order       Int
+  price       Int
+  member      Member   @relation(fields: [memberId], references: [id])
+  buyers      User[]
+  memberId    String
   createdAt   DateTime @default(now())
-  event       Event    @relation(fields: [eventId], references: [id])
-  eventId     String
+}
+
+model Member {
+  id       String  @id @default(cuid())
+  media    Media[]
+  speech   Speech  @relation(fields: [speechId], references: [id])
+  speechId String
+  User     User?   @relation(fields: [userId], references: [id])
+  userId   Int?
+}
+
+model Speech {
+  id      String   @id @default(cuid())
+  name    String?
+  members Member[]
+  flow    Flow     @relation(fields: [flowId], references: [id])
+  flowId  String
+}
+
+model Flow {
+  id        String   @id @default(cuid())
+  name      String
+  from      DateTime
+  to        DateTime
+  event     Event    @relation(fields: [eventId], references: [id])
+  eventId   String
+  speeches  Speech[]
+  createdAt DateTime @default(now())
 }
 
 model Event {
   id        String   @id @default(cuid())
   name      String
   date      DateTime
-  media     Media[]
   price     Int
   buyers    User[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  flows     Flow[]
 }
 
 model Token {

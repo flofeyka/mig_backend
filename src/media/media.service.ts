@@ -29,7 +29,7 @@ export class MediaService {
 
     const direction = newOrder > oldOrder ? 'down' : 'up';
 
-    const eventId = media.eventId;
+    const memberId = media.memberId;
 
     const shiftRange =
       direction === 'down'
@@ -41,7 +41,7 @@ export class MediaService {
     const [_, updatedMedia] = await this.prisma.$transaction([
       this.prisma.media.updateMany({
         where: {
-          eventId,
+          memberId,
           order: shiftRange,
         },
         data: {
@@ -60,6 +60,36 @@ export class MediaService {
     return fillDto(MediaRdo, updatedMedia);
   }
 
+  async addMedia(
+    memberId: string,
+    price: number,
+    file: Express.Multer.File,
+  ): Promise<MediaRdo> {
+    try {
+      const lastMedia = await this.prisma.media.findFirst({
+        where: { memberId },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+
+      const fileData = await this.uploadFile(memberId, 1, file);
+      const media = await this.prisma.media.create({
+        data: {
+          ...fileData,
+          price,
+          memberId,
+          order: (lastMedia?.order || 0) + 1,
+        },
+      });
+
+      return fillDto(MediaRdo, media);
+    } catch (e) {
+      console.error(e);
+      throw new NotFoundException('Member not found');
+    }
+  }
+
   async updateMedia(id: string, dto: UpdateMediaOrderDto): Promise<MediaRdo> {
     try {
       await this.changeOrder(id, dto.order);
@@ -74,20 +104,40 @@ export class MediaService {
     }
   }
 
+  async buyMedia(mediaId: string, userId: number): Promise<SuccessRdo> {
+    try {
+      await this.prisma.media.update({
+        where: { id: mediaId },
+        data: {
+          buyers: {
+            connect: {
+              id: userId,
+            },
+          },
+        },
+      });
+
+      return fillDto(SuccessRdo, { success: true });
+    } catch (e) {
+      console.error(e);
+      throw new NotFoundException('Media not found');
+    }
+  }
+
   async deleteMedia(id: string): Promise<SuccessRdo> {
     try {
       const media = await this.prisma.media.findUnique({ where: { id } });
 
       if (!media) throw new NotFoundException('Media not found');
 
-      const { eventId, order } = media;
+      const { memberId, order } = media;
 
       await this.prisma.$transaction([
         this.prisma.media.delete({ where: { id } }),
 
         this.prisma.media.updateMany({
           where: {
-            eventId,
+            memberId,
             order: { gt: order },
           },
           data: {
@@ -140,36 +190,27 @@ export class MediaService {
     return outputBuffer;
   }
 
-  async uploadFiles(
-    id: string,
-    files: Express.Multer.File[],
-    prevIndex: number = 0,
-  ) {
-    return await Promise.all(
-      files.map(async (mediaFile, index: number) => {
-        const currentIndex = prevIndex + index + 1;
-        const filename = String(currentIndex) + '-' + uuid() + '.' + 'png';
-        const [preview, fullVersion] = await Promise.all([
-          this.storageService.uploadFile(
-            await this.processPreviewImage(mediaFile.buffer),
-            filename,
-            {
-              folder: `/preview/${id}`,
-              storageType: StorageType.S3_PUBLIC,
-            },
-          ),
-          this.storageService.uploadFile(mediaFile.buffer, filename, {
-            folder: `/original/${id}`,
-            storageType: StorageType.S3_PUBLIC,
-          }),
-        ]);
-        return {
-          filename,
-          fullVersion,
-          order: currentIndex,
-          preview,
-        };
+  async uploadFile(id: string, index: number, file: Express.Multer.File) {
+    const filename = String(index) + '-' + uuid() + '.' + 'png';
+    const [preview, fullVersion] = await Promise.all([
+      this.storageService.uploadFile(
+        await this.processPreviewImage(file.buffer),
+        filename,
+        {
+          folder: `/preview/${id}`,
+          storageType: StorageType.S3_PUBLIC,
+        },
+      ),
+      this.storageService.uploadFile(file.buffer, filename, {
+        folder: `/original/${id}`,
+        storageType: StorageType.S3_PUBLIC,
       }),
-    );
+    ]);
+    return {
+      filename,
+      fullVersion,
+      order: index,
+      preview,
+    };
   }
 }

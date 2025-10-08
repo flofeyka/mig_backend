@@ -3,18 +3,11 @@ import { PageDto } from 'common/dto/page.dto';
 import { SuccessRdo } from 'common/rdo/success.rdo';
 import { fillDto } from 'common/utils/fillDto';
 import { PrismaService } from 'prisma/prisma.service';
-import sharp from 'sharp';
-import { StorageType } from 'src/storage/storage.interface';
-import { StorageService } from 'src/storage/storage.service';
-import { v4 as uuid } from 'uuid';
+import { MediaService } from '../media/media.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { EventRdo } from './rdo/event.rdo';
 import { EventsRdo } from './rdo/events.rdo';
-import * as fs from 'fs';
-import path from 'path';
-import { Prisma } from '@prisma/client';
-import { MediaService } from './media/media.service';
 
 @Injectable()
 export class EventService {
@@ -23,73 +16,26 @@ export class EventService {
     private readonly mediaService: MediaService,
   ) {}
 
-  async createEvent(
-    dto: CreateEventDto,
-    files: Express.Multer.File[],
-  ): Promise<EventRdo> {
+  async createEvent(dto: CreateEventDto): Promise<EventRdo> {
     let event = await this.prisma.event.create({
       data: {
         ...dto,
         price: +dto.price,
         date: new Date(dto.date),
-        media: undefined,
       },
     });
-
-    if (files.length) {
-      event = await this.prisma.event.update({
-        where: { id: event.id },
-        data: {
-          media: {
-            createMany: {
-              data: await this.mediaService.uploadFiles(event.id, files),
-            },
-          },
-        },
-        include: {
-          media: true,
-        },
-      });
-    }
 
     return fillDto(EventRdo, event);
   }
 
-  async updateEvent(
-    id: string,
-    dto: UpdateEventDto,
-    files: Express.Multer.File[],
-  ): Promise<EventRdo> {
+  async updateEvent(id: string, dto: UpdateEventDto): Promise<EventRdo> {
     try {
-      const price = dto.price ? +dto.price : undefined;
-      const date = dto.date ? new Date(dto.date) : undefined;
-      const lastMedia = await this.prisma.media.findFirst({
-        where: { eventId: id },
-        orderBy: {
-          order: 'desc',
-        },
-        take: 1,
-        select: { order: true },
-      });
       const event = await this.prisma.event.update({
         where: { id },
         data: {
           ...dto,
-          price,
-          date,
-          media: {
-            createMany: {
-              data: await this.mediaService.uploadFiles(
-                id,
-                files,
-                lastMedia?.order,
-              ),
-              skipDuplicates: true,
-            },
-          },
-        },
-        include: {
-          media: true,
+          price: dto.price ? +dto.price : undefined,
+          date: dto.date ? new Date(dto.date) : undefined,
         },
       });
 
@@ -111,7 +57,7 @@ export class EventService {
     }
   }
 
-  async fetchEvents(dto: PageDto, hasUserAccess: boolean): Promise<EventsRdo> {
+  async fetchEvents(dto: PageDto): Promise<EventsRdo> {
     const { page = '1', limit = '15' } = dto;
     const where = {};
 
@@ -122,21 +68,35 @@ export class EventService {
         skip: (+page - 1) * +limit,
         take: +limit,
         include: {
-          media: {
-            take: 5,
-            select: {
-              id: true,
-              eventId: true,
-              preview: true,
-              order: true,
-              fullVersion: hasUserAccess,
+          flows: {
+            take: 1,
+            include: {
+              speeches: {
+                take: 1,
+                include: {
+                  members: {
+                    take: 1,
+                    include: {
+                      media: {
+                        take: 1,
+                      },
+                    },
+                  },
+                },
+              },
             },
           },
         },
       }),
     ]);
 
-    return fillDto(EventsRdo, { events, total });
+    return fillDto(EventsRdo, {
+      events: events.map((event) => ({
+        ...event,
+        lastPhoto: event.flows[0]?.speeches?.[0]?.members?.[0]?.media,
+      })),
+      total,
+    });
   }
 
   async buyEvent(id: string, userId: number): Promise<SuccessRdo> {
@@ -153,39 +113,18 @@ export class EventService {
     }
   }
 
-  async fetchEvent(
-    id: string,
-    dto: PageDto,
-    hasUserAccess: boolean,
-  ): Promise<EventRdo> {
-    const { page = '1', limit = '15' } = dto;
+  async fetchEvent(id: string): Promise<EventRdo> {
     const where = { id };
 
-    const [totalMedia, event] = await Promise.all([
-      this.prisma.media.count({ where: { eventId: id } }),
-      this.prisma.event.findUnique({
-        where,
-        include: {
-          media: {
-            skip: (+page - 1) * +limit,
-            take: +limit,
-            select: {
-              id: true,
-              eventId: true,
-              preview: true,
-              order: true,
-              fullVersion: hasUserAccess,
-            },
-          },
-        },
-      }),
-    ]);
+    const event = await this.prisma.event.findUnique({
+      where,
+    });
 
     if (!event) {
       throw new NotFoundException('Event not found');
     }
 
-    return fillDto(EventRdo, { ...event, totalMedia });
+    return fillDto(EventRdo, event);
   }
 
   async checkUserAccess(userId: number, eventId: string): Promise<boolean> {
