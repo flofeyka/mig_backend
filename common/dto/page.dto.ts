@@ -1,14 +1,18 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNumber, IsOptional, IsString } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsInt, IsOptional, Max } from 'class-validator';
 
 export class PageDto {
   @ApiProperty({ title: 'Page number', example: '1' })
   @IsOptional()
-  @IsString()
-  page: string;
+  @Type(() => Number)
+  @IsInt()
+  page?: number;
 
   @ApiProperty({ title: 'Page limit', example: '15' })
   @IsOptional()
-  @IsString()
-  limit: string;
+  @Type(() => Number)
+  @IsInt()
+  @Max(100)
+  limit?: number;
 }

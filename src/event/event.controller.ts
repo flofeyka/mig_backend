@@ -38,39 +38,29 @@ export class EventController {
 
   @ApiOperation({ summary: 'Create an event' })
   @ApiOkResponse({ type: EventRdo })
-  @UseInterceptors(FilesInterceptor('media'))
   @UseGuards(AuthJwtGuard)
   @Post('/')
-  createEvent(
-    @Body() dto: CreateEventDto,
-    @UploadedFiles() files: Express.Multer.File[],
-  ): Promise<EventRdo> {
-    return this.eventService.createEvent(dto, files);
+  createEvent(@Body() dto: CreateEventDto): Promise<EventRdo> {
+    return this.eventService.createEvent(dto);
   }
 
   @ApiOperation({ summary: 'Get event by id' })
   @ApiOkResponse({ type: EventRdo })
   @UseGuards(EventAccessGuard)
   @Get('/:id')
-  getEvent(
-    @Param('id') id: string,
-    @Query() dto: PageDto,
-    @EventAccess() hasAccess: boolean,
-  ): Promise<EventRdo> {
-    return this.eventService.fetchEvent(id, dto, hasAccess);
+  getEvent(@Param('id') id: string): Promise<EventRdo> {
+    return this.eventService.fetchEvent(id);
   }
 
   @ApiOperation({ summary: 'Update an event by id' })
   @ApiOkResponse({ type: EventRdo })
-  @UseInterceptors(FilesInterceptor('media'))
   @UseGuards(AuthJwtGuard)
   @Put('/:id')
   updateEvent(
     @Param('id') id: string,
     @Body() dto: UpdateEventDto,
-    @UploadedFiles() files: Express.Multer.File[],
   ): Promise<EventRdo> {
-    return this.eventService.updateEvent(id, dto, files);
+    return this.eventService.updateEvent(id, dto);
   }
 
   @ApiOperation({ summary: 'Delete an event' })
@@ -88,11 +78,8 @@ export class EventController {
   @ApiOkResponse({ type: EventsRdo })
   @UseGuards(EventAccessGuard)
   @Get('/')
-  fetchEvents(
-    @Query() dto: PageDto,
-    @EventAccess() hasAccess: boolean,
-  ): Promise<EventsRdo> {
-    return this.eventService.fetchEvents(dto, hasAccess);
+  fetchEvents(@Query() dto: PageDto): Promise<EventsRdo> {
+    return this.eventService.fetchEvents(dto);
   }
 
   @ApiOperation({ summary: 'Buy an event by id' })
