@@ -10,6 +10,20 @@ export class CreateUserDto {
   login: string;
 
   @ApiProperty({
+    title: 'login',
+    example: 'Qwerty',
+  })
+  @IsString()
+  email: string;
+
+  @ApiProperty({
+    title: 'login',
+    example: 'Qwerty',
+  })
+  @IsString()
+  fullname: string;
+
+  @ApiProperty({
     title: 'password',
     example: 'qwerty12345678',
   })
