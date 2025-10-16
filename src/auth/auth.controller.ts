@@ -15,6 +15,7 @@ import { AuthDto } from './dto/auth.dto';
 import { AuthService } from './auth.service';
 import { AuthRdo } from './rdo/auth-rdo';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { SignUpDto } from './dto/sign-up.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -28,7 +29,7 @@ export class AuthController {
     ).getResponse(),
   })
   @Post('/sign-up')
-  async signUp(@Body() dto: AuthDto): Promise<AuthRdo> {
+  async signUp(@Body() dto: SignUpDto): Promise<AuthRdo> {
     return await this.authService.signUp(dto);
   }
 

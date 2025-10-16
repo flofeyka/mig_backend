@@ -13,6 +13,7 @@ import { UserRdo } from 'src/user/rdo/user.rdo';
 import { AuthRdo } from './rdo/auth-rdo';
 import bcrypt from 'bcrypt';
 import { instanceToPlain } from 'class-transformer';
+import { SignUpDto } from './dto/sign-up.dto';
 
 @Injectable()
 export class AuthService {
@@ -41,7 +42,7 @@ export class AuthService {
     return fillDto(AuthRdo, { user, accessToken, refreshToken });
   }
 
-  async signUp(dto: AuthDto): Promise<AuthRdo> {
+  async signUp(dto: SignUpDto): Promise<AuthRdo> {
     const userExists = await this.userService.findUserByLogin(dto.login);
 
     if (userExists) {
