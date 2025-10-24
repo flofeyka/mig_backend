@@ -9,10 +9,6 @@ export class CreateEventDto {
   @IsString()
   name: string;
 
-  @ApiProperty({ title: 'Price', example: '1000' })
-  @IsString()
-  price: string;
-
   @ApiProperty({
     title: 'Date',
     example: '2024-07-02T00:00:00',

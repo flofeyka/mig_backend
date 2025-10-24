@@ -20,7 +20,6 @@ export class EventService {
     let event = await this.prisma.event.create({
       data: {
         ...dto,
-        price: +dto.price,
         date: new Date(dto.date),
       },
     });
@@ -34,7 +33,6 @@ export class EventService {
         where: { id },
         data: {
           ...dto,
-          price: dto.price ? +dto.price : undefined,
           date: dto.date ? new Date(dto.date) : undefined,
         },
       });

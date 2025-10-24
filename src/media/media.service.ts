@@ -10,12 +10,17 @@ import { StorageService } from 'src/storage/storage.service';
 import { v4 as uuid } from 'uuid';
 import { UpdateMediaOrderDto } from './dto/update-media-order.dto';
 import { MediaRdo } from './rdo/media.rdo';
+import { PaymentService } from 'src/payment/payment.service';
+import { SuccessPaymentLinkRdo } from './rdo/success-payment-link.rdo';
 
 @Injectable()
 export class MediaService {
+  private readonly mediaPrice: number = 400;
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly storageService: StorageService,
+    private readonly paymentService: PaymentService,
   ) {}
 
   async changeOrder(id: string, newOrder: number): Promise<MediaRdo> {
@@ -62,7 +67,6 @@ export class MediaService {
 
   async addMedia(
     memberId: string,
-    price: number,
     file: Express.Multer.File,
   ): Promise<MediaRdo> {
     try {
@@ -77,7 +81,6 @@ export class MediaService {
       const media = await this.prisma.media.create({
         data: {
           ...fileData,
-          price,
           memberId,
           order: (lastMedia?.order || 0) + 1,
         },
@@ -104,20 +107,28 @@ export class MediaService {
     }
   }
 
-  async buyMedia(mediaId: string, userId: number): Promise<SuccessRdo> {
+  async buyMedia(
+    medias: string[],
+    userId: number,
+  ): Promise<SuccessPaymentLinkRdo> {
     try {
-      await this.prisma.media.update({
-        where: { id: mediaId },
-        data: {
-          buyers: {
-            connect: {
-              id: userId,
-            },
+      const mediasFound = await this.prisma.media.findMany({
+        where: {
+          id: {
+            in: medias,
           },
         },
+        select: { id: true },
       });
 
-      return fillDto(SuccessRdo, { success: true });
+      const url = await this.paymentService.generatePaymentUrl(
+        mediasFound.length * 400,
+        userId,
+        mediasFound,
+        `Покупка ${mediasFound.length} медиа`,
+      );
+
+      return fillDto(SuccessPaymentLinkRdo, { success: true, url });
     } catch (e) {
       console.error(e);
       throw new NotFoundException('Media not found');

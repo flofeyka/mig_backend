@@ -10,11 +10,6 @@ export class UpdateEventDto {
   @IsString()
   name?: string;
 
-  @ApiProperty({ title: 'Price', example: '1000' })
-  @IsOptional()
-  @IsString()
-  price?: string;
-
   @ApiProperty({
     title: 'Date',
     example: '2024-07-02T00:00:00',
