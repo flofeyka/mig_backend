@@ -25,6 +25,8 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthJwtGuard } from 'src/auth/auth.guard';
 import { User } from 'common/decorators/User';
 import { UserRdo } from 'src/user/rdo/user.rdo';
+import { BuyMediasDto } from './dto/buy-medias.dto';
+import { SuccessPaymentLinkRdo } from './rdo/success-payment-link.rdo';
 
 @ApiTags('Media')
 @Controller('/media')
@@ -52,7 +54,7 @@ export class MediaController {
     @Body() dto: AddMediaDto,
     @UploadedFile() files: Express.Multer.File,
   ) {
-    return this.mediaService.addMedia(dto.memberId, dto.price, files);
+    return this.mediaService.addMedia(dto.memberId, files);
   }
 
   @ApiOperation({ summary: 'Buy a media' })
@@ -61,12 +63,12 @@ export class MediaController {
     example: new NotFoundException('Media not found').getResponse(),
   })
   @UseGuards(AuthJwtGuard)
-  @Post('/buy/:id')
+  @Post('/buy')
   buyMedia(
-    @Param('id') id: string,
+    @Body() dto: BuyMediasDto,
     @User() user: UserRdo,
-  ): Promise<SuccessRdo> {
-    return this.mediaService.buyMedia(id, user.id);
+  ): Promise<SuccessPaymentLinkRdo> {
+    return this.mediaService.buyMedia(dto.medias, user.id);
   }
 
   @ApiOperation({ summary: 'Change media order by id' })
