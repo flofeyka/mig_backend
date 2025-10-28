@@ -36,6 +36,11 @@ export class FlowRdo {
   @Expose()
   speeches: SpeechRdo[];
 
+  @ApiProperty({ title: 'Event id', example: 'vjsdfkjghfgq345gfsd' })
+  @IsString()
+  @Expose()
+  eventId: string;
+
   @ApiProperty({ title: 'Creation date', example: '2025-10-06T22:12:45.000Z' })
   @IsDateString()
   @Expose()

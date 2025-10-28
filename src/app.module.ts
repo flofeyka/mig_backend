@@ -8,6 +8,7 @@ import { SpeechModule } from './speech/speech.module';
 import { FlowModule } from './flow/flow.module';
 import { MemberModule } from './member/member.module';
 import { PaymentModule } from './payment/payment.module';
+import * as AdminJSNestjs from '@adminjs/nestjs';
 
 const DEFAULT_ADMIN = {
   email: 'admin@example.com',
@@ -23,26 +24,17 @@ const authenticate = async (email: string, password: string) => {
 
 @Module({
   imports: [
-    import('@adminjs/nestjs').then(({ AdminModule }) =>
-      AdminModule.createAdminAsync({
-        useFactory: () => ({
-          adminJsOptions: {
-            rootPath: '/admin',
-            resources: [],
-          },
-          auth: {
-            authenticate,
-            cookieName: 'adminjs',
-            cookiePassword: 'secret',
-          },
-          sessionOptions: {
-            resave: true,
-            saveUninitialized: true,
-            secret: 'secret',
-          },
-        }),
-      }),
-    ),
+    AdminJSNestjs.AdminModule.createAdmin({
+      adminJsOptions: {
+        rootPath: '/admin',
+        resources: [],
+      },
+      auth: {
+        authenticate,
+        cookieName: 'adminjs',
+        cookiePassword: 'secret',
+      },
+    }),
     PaymentModule,
     UserModule,
     AuthModule,
