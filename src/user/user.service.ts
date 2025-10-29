@@ -11,15 +11,19 @@ export class UserService {
   constructor(private readonly prisma: PrismaService) {}
 
   async createUser(dto: CreateUserDto): Promise<User> {
-    return await this.prisma.user.create({ data: dto });
+    return this.prisma.user.create({ data: dto });
   }
 
   async findUserByEmail(email: string): Promise<User | null> {
-    return await this.prisma.user.findUnique({ where: { email } });
+    return this.prisma.user.findUnique({ where: { email } });
   }
 
   async findUserByLogin(login: string): Promise<User | null> {
-    return await this.prisma.user.findUnique({ where: { login } });
+    return this.prisma.user.findUnique({ where: { login } });
+  }
+
+  async findUser(id: number): Promise<User | null> {
+    return this.prisma.user.findUnique({ where: { id } });
   }
 
   async editUserData(id: number, dto: UpdateUserDto): Promise<UserRdo> {

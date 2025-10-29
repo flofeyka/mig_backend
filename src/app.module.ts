@@ -8,6 +8,7 @@ import { SpeechModule } from './speech/speech.module';
 import { FlowModule } from './flow/flow.module';
 import { MemberModule } from './member/member.module';
 import { PaymentModule } from './payment/payment.module';
+import { OrderModule } from './order/order.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { PaymentModule } from './payment/payment.module';
     SpeechModule,
     FlowModule,
     MemberModule,
+    OrderModule,
   ],
   controllers: [],
   providers: [],
