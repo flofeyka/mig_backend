@@ -33,6 +33,7 @@ export class OrderController {
       user.isAdmin,
       dto.page,
       dto.limit,
+      dto.status,
     );
   }
 
