@@ -6,6 +6,7 @@ import { fillDto } from 'common/utils/fillDto';
 import * as crypto from 'crypto';
 import { PrismaService } from 'prisma/prisma.service';
 import { randomInt } from 'node:crypto';
+import { OrderService } from '../order/order.service';
 
 @Injectable()
 export class PaymentService {
@@ -19,6 +20,7 @@ export class PaymentService {
   constructor(
     private readonly configService: ConfigService,
     private readonly prisma: PrismaService,
+    private readonly orderService: OrderService,
   ) {
     this.merchantLogin = this.configService.get('ROBOKASSA_LOGIN', '');
     this.password1 = this.configService.get('ROBOKASSA_FIRST_PASSWORD', '');
@@ -96,26 +98,11 @@ export class PaymentService {
       data: { status },
     });
     switch (status) {
-      case PaymentStatus.SUCCESS:
-        const mediaList = await this.prisma.media.findMany({
-          where: { payments: { some: { id: payment.id } } },
-          select: { id: true },
-        });
-
-        await this.prisma.$transaction(
-          mediaList.map((media) =>
-            this.prisma.media.update({
-              where: { id: media.id },
-              data: {
-                buyers: {
-                  connect: { id: payment.userId },
-                },
-              },
-            }),
-          ),
-        );
+      case PaymentStatus.SUCCESS: {
+        await this.orderService.createOrder(payment.id);
 
         return fillDto(SuccessRdo, { success: true });
+      }
       default:
         return fillDto(SuccessRdo, { success: false });
     }

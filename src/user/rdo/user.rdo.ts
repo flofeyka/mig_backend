@@ -1,9 +1,9 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 import {
+  IsBoolean,
   IsEmail,
   IsInt,
-  IsNumber,
   IsOptional,
   IsString,
 } from 'class-validator';
@@ -38,4 +38,9 @@ export class UserRdo {
   @IsEmail()
   @Expose()
   email: string;
+
+  @ApiProperty({ title: 'Is admin', example: true })
+  @IsBoolean()
+  @Expose()
+  isAdmin: boolean;
 }

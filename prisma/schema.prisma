@@ -19,6 +19,12 @@ enum PaymentStatus {
   FAILED
 }
 
+enum OrderStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model User {
   id       Int       @id @default(autoincrement())
   fullname String
@@ -55,6 +61,15 @@ model Payment {
   medias  Media[]
   user    User          @relation(fields: [userId], references: [id])
   userId  Int
+  order   Order?
+}
+
+model Order {
+  id        String      @id @default(cuid())
+  payment   Payment     @relation(fields: [paymentId], references: [id])
+  paymentId String      @unique
+  status    OrderStatus @default(PENDING)
+  createdAt DateTime    @default(now())
 }
 
 model Member {
