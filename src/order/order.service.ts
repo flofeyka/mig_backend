@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { Media, Order, OrderStatus, Prisma } from '@prisma/client';
+import { Media, Order, OrderMedia, OrderStatus, Prisma } from '@prisma/client';
 import { OrdersRdo } from './rdo/orders.rdo';
 import { fillDto } from '../../common/utils/fillDto';
 import { SuccessRdo } from '../../common/rdo/success.rdo';
@@ -24,9 +24,9 @@ export class OrderService {
     const order = await this.prisma.order.findUnique({
       where: { id, ...(!isAdmin && { payment: { userId } }) },
       include: {
-        payment: {
-          select: {
-            medias: {
+        orderMedia: {
+          include: {
+            media: {
               select: {
                 id: true,
                 preview: true,
@@ -41,7 +41,7 @@ export class OrderService {
 
     if (!order) throw new NotFoundException('Order not found');
 
-    return fillDto(OrderRdo, this.flatOrder(order));
+    return fillDto(OrderRdo, this.flatOrder(order, true));
   }
 
   async getOrders(
@@ -68,9 +68,9 @@ export class OrderService {
         take: limit,
         where,
         include: {
-          payment: {
-            select: {
-              medias: {
+          orderMedia: {
+            include: {
+              media: {
                 select: {
                   id: true,
                   preview: true,
@@ -89,7 +89,9 @@ export class OrderService {
     ]);
 
     return fillDto(OrdersRdo, {
-      orders: orders.map((order) => this.flatOrder(order)),
+      orders: orders.map((order) =>
+        this.flatOrder(order, order.status === OrderStatus.APPROVED),
+      ),
       total,
     });
   }
@@ -100,24 +102,20 @@ export class OrderService {
         where: { id },
         data: { status },
         include: {
-          payment: {
-            select: {
-              userId: true,
+          payment: true,
+          orderMedia: {
+            include: {
+              media: true,
             },
           },
         },
       });
 
       if (order.status === OrderStatus.APPROVED) {
-        const mediaList = await this.prisma.media.findMany({
-          where: { payments: { some: { id: order.paymentId } } },
-          select: { id: true },
-        });
-
         await this.prisma.$transaction(
-          mediaList.map((media) =>
-            this.prisma.media.update({
-              where: { id: media.id },
+          order.orderMedia.map((orderMedia) =>
+            this.prisma.orderMedia.update({
+              where: { id: orderMedia.id },
               data: {
                 buyers: {
                   connect: { id: order.payment.userId },
@@ -135,10 +133,28 @@ export class OrderService {
     }
   }
 
-  private flatOrder(order: Order & { payment: { medias: Partial<Media>[] } }) {
+  private flatOrder(
+    order: Order & {
+      orderMedia: Array<OrderMedia & { media: Partial<Media> }>;
+    },
+    hasAccess: boolean,
+  ) {
     return {
       ...order,
-      medias: order.payment.medias,
+      orderMedia: order.orderMedia.map((orderMedia) => ({
+        id: orderMedia.id,
+        media: {
+          id: orderMedia.media.id,
+          fullVersion: hasAccess ? orderMedia.media.fullVersion : null,
+          preview: orderMedia.media.preview,
+          order: orderMedia.media.order,
+        },
+        processedFullVersion: hasAccess
+          ? orderMedia.processedFullVersion
+          : null,
+        processedPreview: hasAccess ? orderMedia.processedPreview : null,
+        displayOrder: orderMedia.displayOrder,
+      })),
     };
   }
 }

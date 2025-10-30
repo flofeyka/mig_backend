@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { SuccessRdo } from 'common/rdo/success.rdo';
 import { fillDto } from 'common/utils/fillDto';
 import * as fs from 'fs';
@@ -12,6 +16,7 @@ import { UpdateMediaOrderDto } from './dto/update-media-order.dto';
 import { MediaRdo } from './rdo/media.rdo';
 import { PaymentService } from 'src/payment/payment.service';
 import { SuccessPaymentLinkRdo } from './rdo/success-payment-link.rdo';
+import { OrderMediaRdo } from '../order/rdo/order-media.rdo';
 
 @Injectable()
 export class MediaService {
@@ -108,14 +113,14 @@ export class MediaService {
   }
 
   async buyMedia(
-    medias: string[],
+    medias: { id: string; requiresProcessing: boolean }[],
     userId: number,
   ): Promise<SuccessPaymentLinkRdo> {
     try {
       const mediasFound = await this.prisma.media.findMany({
         where: {
           id: {
-            in: medias,
+            in: medias.map((media) => media.id),
           },
         },
         select: { id: true },
@@ -124,7 +129,12 @@ export class MediaService {
       const url = await this.paymentService.generatePaymentUrl(
         mediasFound.length * 400,
         userId,
-        mediasFound,
+        mediasFound.map((media) => ({
+          id: media.id,
+          requiresProcessing: !!medias.find(
+            (i) => i.id === media.id && i.requiresProcessing,
+          ),
+        })),
         `Покупка ${mediasFound.length} медиа`,
       );
 
@@ -199,6 +209,73 @@ export class MediaService {
     const outputBuffer = await image.composite(compositeLayers).toBuffer();
 
     return outputBuffer;
+  }
+
+  async uploadProcessedMedia(
+    orderId: string,
+    mediaId: string,
+    file: Express.Multer.File,
+  ): Promise<OrderMediaRdo> {
+    // 1. Проверить существование order_media
+    const orderMedia = await this.prisma.orderMedia.findUnique({
+      where: {
+        orderId_mediaId: {
+          orderId,
+          mediaId,
+        },
+      },
+    });
+
+    if (!orderMedia) {
+      throw new NotFoundException('Order media not found');
+    }
+
+    if (!orderMedia.requiresProcessing) {
+      throw new BadRequestException('This media does not require processing');
+    }
+
+    const filename = `processed-${orderMedia.mediaId}-${uuid()}.png`;
+
+    const [processedPreview, processedFullVersion] = await Promise.all([
+      this.storageService.uploadFile(
+        await this.processPreviewImage(file.buffer),
+        filename,
+        {
+          folder: `/processed/preview/${orderMedia.orderId}`,
+          storageType: StorageType.S3_PUBLIC,
+        },
+      ),
+      this.storageService.uploadFile(file.buffer, filename, {
+        folder: `/processed/full/${orderMedia.orderId}`,
+        storageType: StorageType.S3_PUBLIC,
+      }),
+    ]);
+
+    // 4. Обновить order_media
+    const updated = await this.prisma.orderMedia.update({
+      where: {
+        orderId_mediaId: {
+          orderId,
+          mediaId,
+        },
+      },
+      data: {
+        processedPreview,
+        processedFullVersion,
+        processedAt: new Date(),
+      },
+      include: {
+        media: true,
+      },
+    });
+
+    return fillDto(OrderMediaRdo, {
+      ...updated.media,
+      requiresProcessing: updated.requiresProcessing,
+      processedPreview: updated.processedPreview,
+      processedFullVersion: updated.processedFullVersion,
+      processedAt: updated.processedAt,
+    });
   }
 
   async uploadFile(id: string, index: number, file: Express.Multer.File) {

@@ -8,9 +8,7 @@ import {
   Post,
   Put,
   Query,
-  UploadedFiles,
   UseGuards,
-  UseInterceptors,
 } from '@nestjs/common';
 import { EventService } from './event.service';
 import { CreateEventDto } from './dto/create-event.dto';
@@ -20,17 +18,12 @@ import {
   ApiOperation,
 } from '@nestjs/swagger';
 import { EventRdo } from './rdo/event.rdo';
-import { PageRdo } from 'common/rdo/page.rdo';
 import { PageDto } from 'common/dto/page.dto';
 import { EventsRdo } from './rdo/events.rdo';
-import { FilesInterceptor } from '@nestjs/platform-express';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { SuccessRdo } from 'common/rdo/success.rdo';
-import { EventAccessGuard } from './guards/event-access.guard';
-import { EventAccess } from 'common/decorators/EventAccess';
 import { AuthJwtGuard } from 'src/auth/auth.guard';
-import { User } from 'common/decorators/User';
-import { UserRdo } from 'src/user/rdo/user.rdo';
+import { AdminGuard } from '../user/admin.guard';
 
 @Controller('event')
 export class EventController {
@@ -38,7 +31,7 @@ export class EventController {
 
   @ApiOperation({ summary: 'Create an event' })
   @ApiOkResponse({ type: EventRdo })
-  @UseGuards(AuthJwtGuard)
+  @UseGuards(AuthJwtGuard, AdminGuard)
   @Post('/')
   createEvent(@Body() dto: CreateEventDto): Promise<EventRdo> {
     return this.eventService.createEvent(dto);
@@ -46,7 +39,6 @@ export class EventController {
 
   @ApiOperation({ summary: 'Get event by id' })
   @ApiOkResponse({ type: EventRdo })
-  @UseGuards(EventAccessGuard)
   @Get('/:id')
   getEvent(@Param('id') id: string): Promise<EventRdo> {
     return this.eventService.fetchEvent(id);
@@ -54,7 +46,7 @@ export class EventController {
 
   @ApiOperation({ summary: 'Update an event by id' })
   @ApiOkResponse({ type: EventRdo })
-  @UseGuards(AuthJwtGuard)
+  @UseGuards(AuthJwtGuard, AdminGuard)
   @Put('/:id')
   updateEvent(
     @Param('id') id: string,
@@ -68,7 +60,7 @@ export class EventController {
   @ApiNotFoundResponse({
     example: new NotFoundException('Event not found').getResponse(),
   })
-  @UseGuards(AuthJwtGuard)
+  @UseGuards(AuthJwtGuard, AdminGuard)
   @Delete('/:id')
   deleteEvent(@Param('id') id: string): Promise<SuccessRdo> {
     return this.eventService.deleteEvent(id);
@@ -76,20 +68,8 @@ export class EventController {
 
   @ApiOperation({ summary: 'Fetch events by page' })
   @ApiOkResponse({ type: EventsRdo })
-  @UseGuards(EventAccessGuard)
   @Get('/')
   fetchEvents(@Query() dto: PageDto): Promise<EventsRdo> {
     return this.eventService.fetchEvents(dto);
-  }
-
-  @ApiOperation({ summary: 'Buy an event by id' })
-  @ApiOkResponse({ type: SuccessRdo })
-  @UseGuards(AuthJwtGuard)
-  @Post('/buy/:id')
-  buyEvent(
-    @Param('id') id: string,
-    @User() user: UserRdo,
-  ): Promise<SuccessRdo> {
-    return this.eventService.buyEvent(id, user.id);
   }
 }

@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsArray, IsEnum, IsString } from 'class-validator';
 import { Expose, Type } from 'class-transformer';
 import { OrderStatus } from '@prisma/client';
-import { MediaRdo } from '../../media/rdo/media.rdo';
+import { OrderMediaRdo } from './order-media.rdo';
 
 export class OrderRdo {
   @ApiProperty({ title: 'Order ID', example: 'gsjdfjasjk12340fasg' })
@@ -24,9 +24,9 @@ export class OrderRdo {
   @Expose()
   status: OrderStatus;
 
-  @ApiProperty({ title: 'Media list', type: [MediaRdo] })
+  @ApiProperty({ title: 'Media list', type: [OrderMediaRdo] })
   @IsArray()
-  @Type(() => MediaRdo)
+  @Type(() => OrderMediaRdo)
   @Expose()
-  medias: MediaRdo[];
+  orderMedia: OrderMediaRdo[];
 }

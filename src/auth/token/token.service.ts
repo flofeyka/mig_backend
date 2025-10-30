@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Token } from '@prisma/client';
-import { instanceToPlain, plainToInstance } from 'class-transformer';
+import { instanceToPlain } from 'class-transformer';
 import { fillDto } from 'common/utils/fillDto';
 import { PrismaService } from 'prisma/prisma.service';
 import { UserRdo } from 'src/user/rdo/user.rdo';
@@ -12,17 +12,15 @@ export class TokenService {
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
   ) {}
-  async generateTokens(payload: UserRdo): Promise<string[]> {
-    const tokens = await Promise.all([
+  generateTokens(payload: UserRdo): [string, string] {
+    return [
       this.jwtService.sign(payload, { expiresIn: '15m' }),
       this.jwtService.sign(payload, { expiresIn: '14d' }),
-    ]);
-
-    return tokens;
+    ];
   }
 
   async saveRefreshToken(userId: number, token: string): Promise<Token> {
-    return await this.prisma.token.upsert({
+    return this.prisma.token.upsert({
       create: { userId, token },
       update: { token },
       where: { userId },

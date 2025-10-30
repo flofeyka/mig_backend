@@ -1,13 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { MediaService } from 'src/media/media.service';
 import { MemberRdo } from './rdo/member.rdo';
 import { PrismaService } from 'prisma/prisma.service';
 import { fillDto } from 'common/utils/fillDto';
 import { CreateMemberDto } from './dto/create-member.dto';
 import { MembersRdo } from './rdo/members.rdo';
 import { UpdateMemberDto } from './dto/update-member.dto';
-import { dmmfToRuntimeDataModel } from '@prisma/client/runtime/library';
-import { PageDto } from 'common/dto/page.dto';
 
 @Injectable()
 export class MemberService {
@@ -57,8 +54,12 @@ export class MemberService {
           skip: (page - 1) * limit,
           include: {
             ...(userId && {
-              buyers: {
-                where: { id: userId },
+              orderMedia: {
+                where: {
+                  buyers: {
+                    some: { id: userId },
+                  },
+                },
               },
             }),
           },
@@ -90,7 +91,7 @@ export class MemberService {
     return fillDto(MemberRdo, {
       ...member,
       media: member.media.map((media) => {
-        const hasBoughtMedia = media.buyers?.length > 0;
+        const hasBoughtMedia = media.orderMedia?.length > 0;
         const hasAccessToSpeech = member.speech.flow.event.buyers?.length > 0;
 
         return {
