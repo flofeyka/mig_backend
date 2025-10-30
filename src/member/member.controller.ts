@@ -9,13 +9,11 @@ import {
   Put,
   Query,
   UseGuards,
-  UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
-  ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
 import { MemberService } from './member.service';
@@ -28,8 +26,8 @@ import { PageDto } from 'common/dto/page.dto';
 import { User } from 'common/decorators/User';
 import { UserRdo } from 'src/user/rdo/user.rdo';
 import { AuthJwtGuard } from 'src/auth/auth.guard';
-import { IsOptional } from 'class-validator';
 import { OptionalAuth } from 'common/decorators/OptionalAuth';
+import { AdminGuard } from '../user/admin.guard';
 
 @ApiTags('Member')
 @Controller('/member')
@@ -38,6 +36,7 @@ export class MemberController {
 
   @ApiOperation({ summary: 'Create new member' })
   @ApiOkResponse({ type: MemberRdo })
+  @UseGuards(AuthJwtGuard, AdminGuard)
   @Post()
   createMember(@Body() dto: CreateMemberDto): Promise<MemberRdo> {
     return this.memberService.createMember(dto);
@@ -71,6 +70,7 @@ export class MemberController {
   @ApiNotFoundResponse({
     example: new NotFoundException('Member not found').getResponse(),
   })
+  @UseGuards(AuthJwtGuard, AdminGuard)
   @Put('/:id')
   updateMember(
     @Param('id') id: string,
@@ -84,6 +84,7 @@ export class MemberController {
   @ApiNotFoundResponse({
     example: new NotFoundException('Member not found').getResponse(),
   })
+  @UseGuards(AuthJwtGuard, AdminGuard)
   @Delete('/:id')
   async deleteMember(@Param('id') id: string): Promise<SuccessRdo> {
     await this.memberService.deleteMember(id);

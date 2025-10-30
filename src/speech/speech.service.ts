@@ -3,7 +3,6 @@ import { PrismaService } from 'prisma/prisma.service';
 import { CreateSpeechDto } from './dto/create-speech.dto';
 import { SpeechRdo } from './rdo/speech.rdo';
 import { fillDto } from 'common/utils/fillDto';
-import { PageDto } from 'common/dto/page.dto';
 import { SpeechesRdo } from './rdo/speeches.rdo';
 import { UpdateSpeechDto } from './dto/update-speech.dto';
 
@@ -17,12 +16,14 @@ export class SpeechService {
   }
 
   async getAllSpeeches(
+    flowId: string,
     page: number = 1,
     limit: number = 15,
   ): Promise<SpeechesRdo> {
     const [total, speeches] = await this.prisma.$transaction([
-      this.prisma.speech.count(),
+      this.prisma.speech.count({ where: { flowId } }),
       this.prisma.speech.findMany({
+        where: { flowId },
         skip: (page - 1) * limit,
         take: limit,
       }),

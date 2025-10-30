@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Payment, PaymentStatus } from '@prisma/client';
+import { Order, OrderStatus, Payment, PaymentStatus } from '@prisma/client';
 import { SuccessRdo } from 'common/rdo/success.rdo';
 import { fillDto } from 'common/utils/fillDto';
 import * as crypto from 'crypto';
@@ -30,7 +30,7 @@ export class PaymentService {
   async generatePaymentUrl(
     amount: number,
     userId: number,
-    medias: { id: string }[],
+    medias: { id: string; requiresProcessing: boolean }[],
     description: string,
   ): Promise<string> {
     try {
@@ -47,10 +47,20 @@ export class PaymentService {
         data: {
           userId,
           amount,
-          medias: {
-            connect: medias,
+          order: {
+            create: {
+              status: OrderStatus.WAITING_FOR_PAYMENT,
+              orderMedia: {
+                createMany: {
+                  data: medias.map((media) => ({
+                    mediaId: media.id,
+                    requiresProcessing: media.requiresProcessing,
+                  })),
+                },
+              },
+            },
           },
-          orderId: invoiceId,
+          systemId: invoiceId,
           status: PaymentStatus.PENDING,
         },
       });
@@ -74,13 +84,13 @@ export class PaymentService {
   }
 
   async processPayment(
-    orderId: string,
+    systemId: string,
     signature: string,
     status: PaymentStatus,
   ): Promise<SuccessRdo> {
-    const payment = await this.fetchPaymentByOrderId(orderId);
+    const payment = await this.fetchPaymentBySystemId(systemId);
 
-    if (!payment) {
+    if (!payment || !payment.order) {
       throw new NotFoundException('Payment not found');
     }
     // const isSignatureValid = this.checkSignature(
@@ -99,7 +109,10 @@ export class PaymentService {
     });
     switch (status) {
       case PaymentStatus.SUCCESS: {
-        await this.orderService.createOrder(payment.id);
+        await this.orderService.changeStatus(
+          payment.order.id,
+          OrderStatus.PENDING,
+        );
 
         return fillDto(SuccessRdo, { success: true });
       }
@@ -108,8 +121,13 @@ export class PaymentService {
     }
   }
 
-  async fetchPaymentByOrderId(orderId: string): Promise<Payment | null> {
-    return this.prisma.payment.findUnique({ where: { orderId } });
+  async fetchPaymentBySystemId(
+    systemId: string,
+  ): Promise<(Payment & { order: Order | null }) | null> {
+    return this.prisma.payment.findUnique({
+      where: { systemId },
+      include: { order: true },
+    });
   }
 
   async fetchPayment(id: string): Promise<Payment | null> {

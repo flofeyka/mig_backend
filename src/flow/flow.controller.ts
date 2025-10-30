@@ -25,6 +25,7 @@ import { FlowsRdo } from './rdo/flows.rdo';
 import { UpdateFlowDto } from './dto/update-flow.dto';
 import { AuthJwtGuard } from 'src/auth/auth.guard';
 import { PageDto } from 'common/dto/page.dto';
+import { AdminGuard } from '../user/admin.guard';
 
 @ApiTags('Flow')
 @ApiBearerAuth()
@@ -34,7 +35,7 @@ export class FlowController {
 
   @ApiOperation({ summary: 'Create new flow' })
   @ApiOkResponse({ type: FlowRdo })
-  @UseGuards(AuthJwtGuard)
+  @UseGuards(AuthJwtGuard, AdminGuard)
   @Post()
   createFlow(@Body() dto: CreateFlowDto): Promise<FlowRdo> {
     return this.flowService.createFlow(dto);
@@ -65,7 +66,7 @@ export class FlowController {
   @ApiNotFoundResponse({
     example: new NotFoundException('Flow not found').getResponse(),
   })
-  @UseGuards(AuthJwtGuard)
+  @UseGuards(AuthJwtGuard, AdminGuard)
   @Put('/:id')
   updateFlow(
     @Param('id') id: string,
@@ -79,7 +80,7 @@ export class FlowController {
   @ApiNotFoundResponse({
     example: new NotFoundException('Flow not found').getResponse(),
   })
-  @UseGuards(AuthJwtGuard)
+  @UseGuards(AuthJwtGuard, AdminGuard)
   @Delete('/:id')
   deleteFlow(@Param('id') id: string): Promise<SuccessRdo> {
     return this.flowService.deleteFlow(id);

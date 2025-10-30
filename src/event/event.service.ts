@@ -17,7 +17,7 @@ export class EventService {
   ) {}
 
   async createEvent(dto: CreateEventDto): Promise<EventRdo> {
-    let event = await this.prisma.event.create({
+    const event = await this.prisma.event.create({
       data: {
         ...dto,
         date: new Date(dto.date),
@@ -95,20 +95,6 @@ export class EventService {
       })),
       total,
     });
-  }
-
-  async buyEvent(id: string, userId: number): Promise<SuccessRdo> {
-    try {
-      await this.prisma.event.update({
-        where: { id },
-        data: { buyers: { connect: { id: userId } } },
-      });
-
-      return fillDto(SuccessRdo, { success: true });
-    } catch (e) {
-      console.error(e);
-      throw new NotFoundException('Event not found');
-    }
   }
 
   async fetchEvent(id: string): Promise<EventRdo> {

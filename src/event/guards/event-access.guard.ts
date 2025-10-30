@@ -1,6 +1,5 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { CustomRequest } from 'common/types/Request';
-import { Observable } from 'rxjs';
 import { EventService } from '../event.service';
 import { TokenService } from 'src/auth/token/token.service';
 
@@ -24,7 +23,8 @@ export class EventAccessGuard implements CanActivate {
       const user = await this.tokenService.validateAccessToken(token);
 
       const userId = user.id;
-      const eventId = request.params.id || request.body.id || request.query.id;
+      const eventId: string =
+        request.params.id || request.body.id || request.query.id;
 
       request.hasUserAccess = await this.eventService.checkUserAccess(
         userId,
