@@ -9,6 +9,7 @@ import { FlowModule } from './flow/flow.module';
 import { MemberModule } from './member/member.module';
 import { PaymentModule } from './payment/payment.module';
 import { OrderModule } from './order/order.module';
+import { BookingRequestModule } from './booking-request/booking-request.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { OrderModule } from './order/order.module';
     FlowModule,
     MemberModule,
     OrderModule,
+    BookingRequestModule,
   ],
   controllers: [],
   providers: [],
