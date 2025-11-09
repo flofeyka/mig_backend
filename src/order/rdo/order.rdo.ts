@@ -1,8 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, IsEnum, IsString } from 'class-validator';
+import { IsArray, IsEnum, IsString, ValidateNested } from 'class-validator';
 import { Expose, Type } from 'class-transformer';
 import { OrderStatus } from '@prisma/client';
 import { OrderMediaRdo } from './order-media.rdo';
+import { SpeechRdo } from '../../speech/rdo/speech.rdo';
 
 export class OrderRdo {
   @ApiProperty({ title: 'Order ID', example: 'gsjdfjasjk12340fasg' })
@@ -29,4 +30,10 @@ export class OrderRdo {
   @Type(() => OrderMediaRdo)
   @Expose()
   orderMedia: OrderMediaRdo[];
+
+  @ApiProperty({ title: 'Speeches list', type: [SpeechRdo] })
+  @ValidateNested({ each: true })
+  @Type(() => SpeechRdo)
+  @Expose()
+  speeches: SpeechRdo[];
 }

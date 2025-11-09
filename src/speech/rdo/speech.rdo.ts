@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Expose } from 'class-transformer';
-import { IsOptional, IsString } from 'class-validator';
+import { Expose, Type } from 'class-transformer';
+import { IsOptional, IsString, ValidateNested } from 'class-validator';
 import { MemberRdo } from 'src/member/rdo/member.rdo';
 
 export class SpeechRdo {
@@ -21,6 +21,8 @@ export class SpeechRdo {
   flowId: string;
 
   @ApiProperty({ title: 'Members', type: [MemberRdo] })
+  @ValidateNested({ each: true })
+  @Type(() => MemberRdo)
   @Expose()
-  members: MemberRdo;
+  members: MemberRdo[];
 }

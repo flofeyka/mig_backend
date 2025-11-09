@@ -14,7 +14,7 @@ export class MemberRdo {
   @ValidateNested({ each: true })
   @Type(() => MediaRdo)
   @Expose()
-  media: MediaRdo;
+  media: MediaRdo[];
 
   @ApiProperty({ title: 'Speech id', example: '123' })
   @IsString()

@@ -66,6 +66,11 @@ export class MemberService {
         },
         speech: {
           select: {
+            ...(userId && {
+              buyers: {
+                where: { id: userId },
+              },
+            }),
             flow: {
               select: {
                 event: {
@@ -93,11 +98,14 @@ export class MemberService {
       media: member.media.map((media) => {
         const hasBoughtMedia = media.orderMedia?.length > 0;
         const hasAccessToSpeech = member.speech.flow.event.buyers?.length > 0;
+        const hasAccessToSpeechDirectly = member.speech.buyers?.length > 0;
 
         return {
           ...media,
           fullVersion:
-            hasBoughtMedia || hasAccessToSpeech ? media.fullVersion : undefined,
+            hasBoughtMedia || hasAccessToSpeech || hasAccessToSpeechDirectly
+              ? media.fullVersion
+              : undefined,
         };
       }),
     });
