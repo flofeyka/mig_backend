@@ -3,10 +3,8 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { PrismaService } from 'prisma/prisma.service';
 import { AuthDto } from './dto/auth.dto';
 import { UserService } from 'src/user/user.service';
-import { JwtService } from '@nestjs/jwt';
 import { TokenService } from './token/token.service';
 import { fillDto } from 'common/utils/fillDto';
 import { UserRdo } from 'src/user/rdo/user.rdo';

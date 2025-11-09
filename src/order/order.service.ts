@@ -1,6 +1,14 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { Media, Order, OrderMedia, OrderStatus, Prisma } from '@prisma/client';
+import {
+  Media,
+  Member,
+  Order,
+  OrderMedia,
+  OrderStatus,
+  Prisma,
+  Speech,
+} from '@prisma/client';
 import { OrdersRdo } from './rdo/orders.rdo';
 import { fillDto } from '../../common/utils/fillDto';
 import { SuccessRdo } from '../../common/rdo/success.rdo';
@@ -11,10 +19,6 @@ export class OrderService {
   private readonly logger: Logger = new Logger();
 
   constructor(private readonly prisma: PrismaService) {}
-
-  async createOrder(paymentId: string): Promise<Order> {
-    return this.prisma.order.create({ data: { paymentId } });
-  }
 
   async getOrder(
     id: string,
@@ -32,6 +36,15 @@ export class OrderService {
                 preview: true,
                 order: true,
                 fullVersion: isAdmin,
+              },
+            },
+          },
+        },
+        speeches: {
+          include: {
+            members: {
+              include: {
+                media: true,
               },
             },
           },
@@ -70,12 +83,14 @@ export class OrderService {
         include: {
           orderMedia: {
             include: {
-              media: {
-                select: {
-                  id: true,
-                  preview: true,
-                  order: true,
-                  fullVersion: isAdmin,
+              media: true,
+            },
+          },
+          speeches: {
+            include: {
+              members: {
+                include: {
+                  media: true,
                 },
               },
             },
@@ -108,12 +123,13 @@ export class OrderService {
               media: true,
             },
           },
+          speeches: true,
         },
       });
 
       if (order.status === OrderStatus.APPROVED) {
-        await this.prisma.$transaction(
-          order.orderMedia.map((orderMedia) =>
+        await this.prisma.$transaction([
+          ...order.orderMedia.map((orderMedia) =>
             this.prisma.orderMedia.update({
               where: { id: orderMedia.id },
               data: {
@@ -123,7 +139,17 @@ export class OrderService {
               },
             }),
           ),
-        );
+          ...order.speeches.map((speech) =>
+            this.prisma.speech.update({
+              where: { id: speech.id },
+              data: {
+                buyers: {
+                  connect: { id: order.payment.userId },
+                },
+              },
+            }),
+          ),
+        ]);
       }
 
       return fillDto(SuccessRdo, { success: true });
@@ -135,12 +161,25 @@ export class OrderService {
 
   private flatOrder(
     order: Order & {
-      orderMedia: Array<OrderMedia & { media: Partial<Media> }>;
+      orderMedia: Array<OrderMedia & { media: Media }>;
+      speeches: Array<Speech & { members: Array<Member & { media: Media[] }> }>;
     },
     hasAccess: boolean,
   ) {
     return {
       ...order,
+      speeches: order.speeches.map((speech) => ({
+        id: speech.id,
+        members: speech.members.map((member) => ({
+          id: member.id,
+          media: member.media.map((media) => ({
+            id: media.id,
+            fullVersion: hasAccess ? media.fullVersion : null,
+            preview: media.preview,
+            order: media.order,
+          })),
+        })),
+      })),
       orderMedia: order.orderMedia.map((orderMedia) => ({
         id: orderMedia.id,
         media: {

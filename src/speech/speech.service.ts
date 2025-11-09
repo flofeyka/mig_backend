@@ -5,6 +5,7 @@ import { SpeechRdo } from './rdo/speech.rdo';
 import { fillDto } from 'common/utils/fillDto';
 import { SpeechesRdo } from './rdo/speeches.rdo';
 import { UpdateSpeechDto } from './dto/update-speech.dto';
+import { SuccessRdo } from '../../common/rdo/success.rdo';
 
 @Injectable()
 export class SpeechService {
@@ -30,6 +31,10 @@ export class SpeechService {
     ]);
 
     return fillDto(SpeechesRdo, { speeches, total });
+  }
+
+  async buySpeech(speechId: string): Promise<SuccessRdo> {
+    return fillDto(SuccessRdo, { success: true });
   }
 
   async getSpeechById(id: string): Promise<SpeechRdo> {

@@ -5,17 +5,27 @@ import { instanceToPlain } from 'class-transformer';
 import { fillDto } from 'common/utils/fillDto';
 import { PrismaService } from 'prisma/prisma.service';
 import { UserRdo } from 'src/user/rdo/user.rdo';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class TokenService {
+  private mode: 'development' | 'production';
+
   constructor(
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
-  ) {}
+    private readonly configService: ConfigService,
+  ) {
+    this.mode = this.configService.get('NODE_ENV', 'development');
+  }
   generateTokens(payload: UserRdo): [string, string] {
     return [
-      this.jwtService.sign(payload, { expiresIn: '15m' }),
-      this.jwtService.sign(payload, { expiresIn: '14d' }),
+      this.jwtService.sign(payload, {
+        expiresIn: this.mode === 'development' ? '999d' : '15m',
+      }),
+      this.jwtService.sign(payload, {
+        expiresIn: this.mode === 'development' ? '999d' : '14d',
+      }),
     ];
   }
 

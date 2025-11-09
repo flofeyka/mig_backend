@@ -37,6 +37,7 @@ model User {
   isAdmin    Boolean      @default(false)
   payments   Payment[]
   orderMedia OrderMedia[]
+  speeches   Speech[]
 }
 
 model Media {
@@ -93,6 +94,7 @@ model Order {
   status     OrderStatus  @default(WAITING_FOR_PAYMENT)
   createdAt  DateTime     @default(now())
   orderMedia OrderMedia[]
+  speeches   Speech[]
   payment    Payment      @relation(fields: [paymentId], references: [id])
   paymentId  String       @unique
 }
@@ -110,6 +112,8 @@ model Speech {
   members Member[]
   flow    Flow     @relation(fields: [flowId], references: [id])
   flowId  String
+  orders  Order[]
+  buyers  User[]
 }
 
 model Flow {

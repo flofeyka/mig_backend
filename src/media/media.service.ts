@@ -135,6 +135,7 @@ export class MediaService {
             (i) => i.id === media.id && i.requiresProcessing,
           ),
         })),
+        [],
         `Покупка ${mediasFound.length} медиа`,
       );
 

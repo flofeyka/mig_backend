@@ -30,7 +30,8 @@ export class PaymentService {
   async generatePaymentUrl(
     amount: number,
     userId: number,
-    medias: { id: string; requiresProcessing: boolean }[],
+    medias: { id: string; requiresProcessing: boolean }[] = [],
+    speeches: { id: string }[] = [],
     description: string,
   ): Promise<string> {
     try {
@@ -57,6 +58,9 @@ export class PaymentService {
                     requiresProcessing: media.requiresProcessing,
                   })),
                 },
+              },
+              speeches: {
+                connect: speeches,
               },
             },
           },
