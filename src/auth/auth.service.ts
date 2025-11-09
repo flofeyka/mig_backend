@@ -52,7 +52,7 @@ export class AuthService {
       password: await bcrypt.hash(dto.password, 10),
     });
 
-    const [accessToken, refreshToken] = await this.tokenService.generateTokens(
+    const [accessToken, refreshToken] = this.tokenService.generateTokens(
       instanceToPlain(fillDto(UserRdo, user)) as UserRdo,
     );
     await this.tokenService.saveRefreshToken(user.id, refreshToken);
@@ -67,8 +67,8 @@ export class AuthService {
       throw new UnauthorizedException('Token invalid');
     }
 
-    const [accessToken, refreshToken] =
-      await this.tokenService.generateTokens(user);
+    const [accessToken, refreshToken] = this.tokenService.generateTokens(user);
+
     await this.tokenService.saveRefreshToken(user.id, refreshToken);
 
     return fillDto(AuthRdo, { accessToken, refreshToken, user });

@@ -21,15 +21,7 @@ export class PaymentController {
     @User() user: UserRdo,
     @Body() dto: CreatePaymentOrderDto,
   ): Promise<string> {
-    const mediasAmount = (dto.medias || []).length * 400;
-    const speechesAmount = dto.speeches?.reduce(
-      (prev, acc, index) =>
-        prev + (index === 0 ? 2000 : index === 1 ? 1000 : 1500),
-      0,
-    );
-
     return this.paymentService.generatePaymentUrl(
-      mediasAmount + speechesAmount,
       user.id,
       dto.medias,
       dto.speeches,

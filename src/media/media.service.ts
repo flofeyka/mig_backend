@@ -15,7 +15,6 @@ import { v4 as uuid } from 'uuid';
 import { UpdateMediaOrderDto } from './dto/update-media-order.dto';
 import { MediaRdo } from './rdo/media.rdo';
 import { PaymentService } from 'src/payment/payment.service';
-import { SuccessPaymentLinkRdo } from './rdo/success-payment-link.rdo';
 import { OrderMediaRdo } from '../order/rdo/order-media.rdo';
 
 @Injectable()
@@ -106,40 +105,6 @@ export class MediaService {
         data: dto,
       });
       return fillDto(MediaRdo, updated);
-    } catch (e) {
-      console.error(e);
-      throw new NotFoundException('Media not found');
-    }
-  }
-
-  async buyMedia(
-    medias: { id: string; requiresProcessing: boolean }[],
-    userId: number,
-  ): Promise<SuccessPaymentLinkRdo> {
-    try {
-      const mediasFound = await this.prisma.media.findMany({
-        where: {
-          id: {
-            in: medias.map((media) => media.id),
-          },
-        },
-        select: { id: true },
-      });
-
-      const url = await this.paymentService.generatePaymentUrl(
-        mediasFound.length * 400,
-        userId,
-        mediasFound.map((media) => ({
-          id: media.id,
-          requiresProcessing: !!medias.find(
-            (i) => i.id === media.id && i.requiresProcessing,
-          ),
-        })),
-        [],
-        `Покупка ${mediasFound.length} медиа`,
-      );
-
-      return fillDto(SuccessPaymentLinkRdo, { success: true, url });
     } catch (e) {
       console.error(e);
       throw new NotFoundException('Media not found');

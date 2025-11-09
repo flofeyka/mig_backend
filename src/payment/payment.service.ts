@@ -1,4 +1,9 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadGatewayException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Order, OrderStatus, Payment, PaymentStatus } from '@prisma/client';
 import { SuccessRdo } from 'common/rdo/success.rdo';
@@ -28,13 +33,31 @@ export class PaymentService {
   }
 
   async generatePaymentUrl(
-    amount: number,
     userId: number,
     medias: { id: string; requiresProcessing: boolean }[] = [],
     speeches: { id: string }[] = [],
     description: string,
   ): Promise<string> {
     try {
+      const mediasAmount = (medias || []).length * 400;
+
+      const foundSpeeches = (
+        await Promise.all(
+          speeches.map(({ id }) =>
+            this.prisma.speech.findUnique({ where: { id } }),
+          ),
+        )
+      ).filter((item) => !!item);
+
+      const speechesAmount = foundSpeeches?.reduce(
+        (prev, acc, index) =>
+          prev +
+          (acc.isGroup ? 2500 : index === 0 ? 2000 : index === 1 ? 1000 : 1500),
+        0,
+      );
+
+      const amount = mediasAmount + speechesAmount;
+
       const invoiceId = String(randomInt(1, 1000000000));
 
       const signature = crypto
@@ -60,7 +83,7 @@ export class PaymentService {
                 },
               },
               speeches: {
-                connect: speeches,
+                connect: foundSpeeches.map((speech) => ({ id: speech.id })),
               },
             },
           },
@@ -97,15 +120,15 @@ export class PaymentService {
     if (!payment || !payment.order) {
       throw new NotFoundException('Payment not found');
     }
-    // const isSignatureValid = this.checkSignature(
-    //   String(payment.amount),
-    //   payment.orderId,
-    //   signature,
-    // );
-    //
-    // if (!isSignatureValid) {
-    //   throw new BadGatewayException('Invalid signature');
-    // }
+    const isSignatureValid = this.checkSignature(
+      String(payment.amount),
+      payment.systemId,
+      signature,
+    );
+
+    if (!isSignatureValid) {
+      throw new BadGatewayException('Invalid signature');
+    }
 
     await this.prisma.payment.update({
       where: { id: payment.id },
@@ -145,15 +168,9 @@ export class PaymentService {
   ): boolean {
     const expected = crypto
       .createHash('md5')
-      .update(`${this.merchantLogin}:${outSum}:${invId}:${this.password1}`)
+      .update(`${(+outSum).toFixed(2)}:${invId}:${this.password1}`)
       .digest('hex');
 
-    console.log(outSum);
-    console.log(invId);
-
-    console.log(expected);
-    console.log(signatureValue);
-
-    return expected === signatureValue.toUpperCase();
+    return expected === signatureValue;
   }
 }
