@@ -1,6 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
-import { IsOptional, IsString, ValidateNested } from 'class-validator';
+import {
+  IsBoolean,
+  IsOptional,
+  IsString,
+  ValidateNested,
+} from 'class-validator';
 import { MemberRdo } from 'src/member/rdo/member.rdo';
 
 export class SpeechRdo {
@@ -19,6 +24,11 @@ export class SpeechRdo {
   @IsString()
   @Expose()
   flowId: string;
+
+  @ApiProperty({ title: 'Is speech group', example: true })
+  @IsBoolean()
+  @Expose()
+  isGroup: boolean;
 
   @ApiProperty({ title: 'Members', type: [MemberRdo] })
   @ValidateNested({ each: true })

@@ -110,6 +110,7 @@ model Speech {
   id      String   @id @default(cuid())
   name    String?
   members Member[]
+  isGroup Boolean  @default(false)
   flow    Flow     @relation(fields: [flowId], references: [id])
   flowId  String
   orders  Order[]

@@ -23,10 +23,6 @@ import { UpdateMediaOrderDto } from './dto/update-media-order.dto';
 import { AddMediaDto } from './dto/add-media.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthJwtGuard } from 'src/auth/auth.guard';
-import { User } from 'common/decorators/User';
-import { UserRdo } from 'src/user/rdo/user.rdo';
-import { BuyMediasDto } from './dto/buy-medias.dto';
-import { SuccessPaymentLinkRdo } from './rdo/success-payment-link.rdo';
 import { AdminGuard } from '../user/admin.guard';
 import { OrderMediaRdo } from '../order/rdo/order-media.rdo';
 
@@ -51,7 +47,9 @@ export class MediaController {
   @ApiNotFoundResponse({
     example: new NotFoundException('Member not found').getResponse(),
   })
-  @UseInterceptors(FileInterceptor('media'))
+  @UseInterceptors(
+    FileInterceptor('media', { limits: { fileSize: 50 * 1024 * 1024 } }),
+  )
   @UseGuards(AuthJwtGuard, AdminGuard)
   @Post('/')
   addMedia(
@@ -61,23 +59,11 @@ export class MediaController {
     return this.mediaService.addMedia(dto.memberId, files);
   }
 
-  @ApiOperation({ summary: 'Buy a media' })
-  @ApiOkResponse({ type: SuccessRdo })
-  @ApiNotFoundResponse({
-    example: new NotFoundException('Media not found').getResponse(),
-  })
-  @UseGuards(AuthJwtGuard)
-  @Post('/buy')
-  buyMedia(
-    @Body() dto: BuyMediasDto,
-    @User() user: UserRdo,
-  ): Promise<SuccessPaymentLinkRdo> {
-    return this.mediaService.buyMedia(dto.medias, user.id);
-  }
-
   @ApiOperation({ summary: 'Upload processed photo' })
   @ApiOkResponse({ type: OrderMediaRdo })
-  @UseInterceptors(FileInterceptor('media'))
+  @UseInterceptors(
+    FileInterceptor('media', { limits: { fileSize: 50 * 1024 * 1024 } }),
+  )
   @UseGuards(AuthJwtGuard, AdminGuard)
   @Post('/order-media/:mediaId/:orderId')
   uploadProcessedPhoto(
