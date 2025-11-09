@@ -138,6 +138,17 @@ model Event {
   flows     Flow[]
 }
 
+model BookingRequest {
+  id        Int      @id @default(autoincrement())
+  fullName  String
+  phone     String
+  date      DateTime
+  eventName String
+
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+}
+
 model Token {
   id     String @id @default(cuid())
   token  String @unique
