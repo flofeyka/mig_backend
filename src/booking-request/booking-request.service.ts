@@ -13,7 +13,7 @@ export class BookingRequestService {
 
   async createRequest(dto: CreateRequestDto): Promise<BookingRequestRdo> {
     const request = await this.prisma.bookingRequest.create({
-      data: { ...dto, date: new Date(dto.eventDate) },
+      data: { ...dto, date: new Date(dto.date) },
     });
 
     return fillDto(BookingRequestRdo, request);
@@ -64,7 +64,7 @@ export class BookingRequestService {
         where: { id },
         data: {
           ...dto,
-          ...(dto.eventDate && { date: new Date(dto.eventDate) }),
+          ...(dto.date && { date: new Date(dto.date) }),
         },
       });
 

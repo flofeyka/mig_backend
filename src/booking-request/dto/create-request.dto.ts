@@ -12,7 +12,7 @@ export class CreateRequestDto {
 
   @ApiProperty({ title: 'Event date', example: '2008-09-18T09:00:00.000' })
   @IsDateString()
-  eventDate: string;
+  date: string;
 
   @ApiProperty({ title: 'Phone number', example: '+79952235123' })
   @IsPhoneNumber()
