@@ -21,7 +21,7 @@ export class BookingRequestRdo {
   @ApiProperty({ title: 'Event date', example: '2008-09-18T09:00:00.000' })
   @IsDate()
   @Expose()
-  eventDate: Date;
+  date: Date;
 
   @ApiProperty({ title: 'Phone number', example: '+79952235123' })
   @IsPhoneNumber()
