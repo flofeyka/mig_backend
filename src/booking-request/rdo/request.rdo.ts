@@ -5,6 +5,7 @@ import { Expose } from 'class-transformer';
 export class BookingRequestRdo {
   @ApiProperty({ title: 'ID', example: 'gjsdkfljgfgq345gdf98sg' })
   @IsInt()
+  @Expose()
   id: number;
 
   @ApiProperty({ title: 'Full name', example: 'Danil Bashirov' })
