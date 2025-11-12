@@ -18,10 +18,7 @@ export class EventService {
 
   async createEvent(dto: CreateEventDto): Promise<EventRdo> {
     const event = await this.prisma.event.create({
-      data: {
-        ...dto,
-        date: new Date(dto.date),
-      },
+      data: dto,
     });
 
     return fillDto(EventRdo, event);
@@ -31,10 +28,7 @@ export class EventService {
     try {
       const event = await this.prisma.event.update({
         where: { id },
-        data: {
-          ...dto,
-          date: dto.date ? new Date(dto.date) : undefined,
-        },
+        data: dto,
       });
 
       return fillDto(EventRdo, event);

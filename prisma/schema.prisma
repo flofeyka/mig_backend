@@ -132,13 +132,15 @@ model Flow {
 }
 
 model Event {
-  id        String   @id @default(cuid())
-  name      String
-  date      DateTime
-  buyers    User[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  flows     Flow[]
+  id            String    @id @default(cuid())
+  name          String
+  date          DateTime
+  buyers        User[]
+  orderDeadline DateTime?
+  location      String    @default("Moscow, Russia")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  flows         Flow[]
 }
 
 model BookingRequest {

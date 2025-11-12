@@ -1,5 +1,6 @@
 import {
   BadGatewayException,
+  BadRequestException,
   Injectable,
   Logger,
   NotFoundException,
@@ -42,7 +43,19 @@ export class PaymentService {
       const foundSpeeches = (
         await Promise.all(
           speeches.map(({ id }) =>
-            this.prisma.speech.findUnique({ where: { id } }),
+            this.prisma.speech.findUnique({
+              where: {
+                id,
+                OR: [
+                  {
+                    flow: { event: { orderDeadline: { gte: new Date() } } },
+                  },
+                  {
+                    flow: { event: { orderDeadline: null } },
+                  },
+                ],
+              },
+            }),
           ),
         )
       ).filter((item) => !!item);
@@ -50,7 +63,27 @@ export class PaymentService {
       const foundMedias = (
         await Promise.all(
           medias.map(({ id }) =>
-            this.prisma.media.findUnique({ where: { id } }),
+            this.prisma.media.findUnique({
+              where: {
+                id,
+                OR: [
+                  {
+                    member: {
+                      speech: {
+                        flow: { event: { orderDeadline: { gte: new Date() } } },
+                      },
+                    },
+                  },
+                  {
+                    member: {
+                      speech: {
+                        flow: { event: { orderDeadline: null } },
+                      },
+                    },
+                  },
+                ],
+              },
+            }),
           ),
         )
       ).filter((item) => !!item);
@@ -66,6 +99,9 @@ export class PaymentService {
       );
 
       const amount = mediasAmount + speechesAmount;
+
+      if (!amount)
+        throw new BadRequestException('Speeches and medias not found');
 
       const invoiceId = String(randomInt(1, 1000000000));
 
