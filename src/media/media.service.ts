@@ -71,6 +71,7 @@ export class MediaService {
 
   async addMedia(
     memberId: string,
+    price: number,
     file: Express.Multer.File,
   ): Promise<MediaRdo> {
     try {
@@ -85,6 +86,7 @@ export class MediaService {
       const media = await this.prisma.media.create({
         data: {
           ...fileData,
+          price,
           memberId,
           order: (lastMedia?.order || 0) + 1,
         },
@@ -217,7 +219,6 @@ export class MediaService {
       }),
     ]);
 
-    // 4. Обновить order_media
     const updated = await this.prisma.orderMedia.update({
       where: {
         orderId_mediaId: {

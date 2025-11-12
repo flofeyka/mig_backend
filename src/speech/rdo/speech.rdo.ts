@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
 import {
   IsBoolean,
+  IsInt,
   IsOptional,
   IsString,
   ValidateNested,
@@ -24,6 +25,11 @@ export class SpeechRdo {
   @IsString()
   @Expose()
   flowId: string;
+
+  @ApiProperty({ title: 'Price', example: 2000 })
+  @IsInt()
+  @Expose()
+  price: number;
 
   @ApiProperty({ title: 'Is speech group', example: true })
   @IsBoolean()

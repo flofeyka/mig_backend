@@ -216,6 +216,7 @@ export class OrderService {
             id: media.id,
             fullVersion: hasAccess ? media.fullVersion : null,
             preview: media.preview,
+            price: media.price,
             order: media.order,
           })),
         })),
@@ -227,6 +228,7 @@ export class OrderService {
           fullVersion: hasAccess ? orderMedia.media.fullVersion : null,
           preview: orderMedia.media.preview,
           order: orderMedia.media.order,
+          price: orderMedia.media.price,
         },
         processedFullVersion: hasAccess
           ? orderMedia.processedFullVersion

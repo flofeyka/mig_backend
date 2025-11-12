@@ -39,8 +39,6 @@ export class PaymentService {
     description: string,
   ): Promise<string> {
     try {
-      const mediasAmount = (medias || []).length * 400;
-
       const foundSpeeches = (
         await Promise.all(
           speeches.map(({ id }) =>
@@ -49,10 +47,21 @@ export class PaymentService {
         )
       ).filter((item) => !!item);
 
+      const foundMedias = (
+        await Promise.all(
+          medias.map(({ id }) =>
+            this.prisma.media.findUnique({ where: { id } }),
+          ),
+        )
+      ).filter((item) => !!item);
+
+      const mediasAmount = foundMedias.reduce(
+        (prev, acc) => prev + acc.price,
+        0,
+      );
+
       const speechesAmount = foundSpeeches?.reduce(
-        (prev, acc, index) =>
-          prev +
-          (acc.isGroup ? 2500 : index === 0 ? 2000 : index === 1 ? 1000 : 1500),
+        (prev, acc) => prev + acc.price,
         0,
       );
 
