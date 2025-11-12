@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Param,
+  Post,
   Put,
   Query,
   UseGuards,
@@ -35,6 +36,14 @@ export class OrderController {
       dto.limit,
       dto.status,
     );
+  }
+
+  @ApiOperation({ summary: 'Skip proccessing' })
+  @ApiOkResponse({ type: OrderRdo })
+  @UseGuards(AuthJwtGuard)
+  @Post('/skip-proccessing/:id')
+  skipProccessing(@Param('id') id: string, @User() user: UserRdo) {
+    return this.orderService.skipProccessing(id, user.id);
   }
 
   @ApiOperation({ summary: 'Change order status' })

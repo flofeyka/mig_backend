@@ -249,16 +249,20 @@ export class MediaService {
     const [preview, fullVersion] = await Promise.all([
       this.storageService.uploadFile(
         await this.processPreviewImage(file.buffer),
-        filename,
+        String(index) + '-' + uuid() + '.' + 'png',
         {
           folder: `/preview/${id}`,
           storageType: StorageType.S3_PUBLIC,
         },
       ),
-      this.storageService.uploadFile(file.buffer, filename, {
-        folder: `/original/${id}`,
-        storageType: StorageType.S3_PUBLIC,
-      }),
+      this.storageService.uploadFile(
+        file.buffer,
+        String(index) + '-' + uuid() + '.' + 'png',
+        {
+          folder: `/original/${id}`,
+          storageType: StorageType.S3_PUBLIC,
+        },
+      ),
     ]);
     return {
       filename,

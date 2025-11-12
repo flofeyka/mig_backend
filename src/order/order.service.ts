@@ -1,4 +1,9 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import {
   Media,
@@ -30,14 +35,7 @@ export class OrderService {
       include: {
         orderMedia: {
           include: {
-            media: {
-              select: {
-                id: true,
-                preview: true,
-                order: true,
-                fullVersion: isAdmin,
-              },
-            },
+            media: true,
           },
         },
         speeches: {
@@ -54,7 +52,10 @@ export class OrderService {
 
     if (!order) throw new NotFoundException('Order not found');
 
-    return fillDto(OrderRdo, this.flatOrder(order, true));
+    return fillDto(
+      OrderRdo,
+      this.flatOrder(order, isAdmin || order.status === OrderStatus.APPROVED),
+    );
   }
 
   async getOrders(
@@ -109,6 +110,45 @@ export class OrderService {
       ),
       total,
     });
+  }
+
+  async skipProccessing(id: string, userId: number): Promise<OrderRdo> {
+    const order = await this.prisma.order.findUnique({
+      where: { id, payment: { userId } },
+      include: {
+        orderMedia: {
+          include: {
+            media: true,
+          },
+        },
+        speeches: {
+          include: {
+            members: {
+              include: {
+                media: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!order) throw new NotFoundException('Order not found');
+
+    if (!order.orderMedia?.length)
+      throw new BadRequestException(
+        'You have not got requires-proccessing photos for skipping',
+      );
+
+    if (order.status !== OrderStatus.PENDING)
+      throw new BadRequestException('Invalid status for skip proccessing');
+
+    await this.prisma.order.update({
+      where: { id: order.id },
+      data: { status: OrderStatus.APPROVED },
+    });
+
+    return fillDto(OrderRdo, this.flatOrder(order, true));
   }
 
   async changeStatus(id: string, status: OrderStatus): Promise<SuccessRdo> {

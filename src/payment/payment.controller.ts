@@ -25,7 +25,7 @@ export class PaymentController {
       user.id,
       dto.medias,
       dto.speeches,
-      `Покупка ${dto.medias?.length || 0} фотографий и ${dto.speeches.length} выступлений`,
+      `Покупка ${dto.medias?.length || 0} фотографий и ${dto.speeches?.length} выступлений`,
     );
   }
 
