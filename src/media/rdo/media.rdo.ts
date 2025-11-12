@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
-import { IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsInt, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class MediaRdo {
   @ApiProperty({ title: 'ID', example: 'cmgas45bsfdgq33g' })
@@ -15,6 +15,11 @@ export class MediaRdo {
   @IsString()
   @Expose()
   preview: string;
+
+  @ApiProperty({ title: 'Price', example: 500 })
+  @IsInt()
+  @Expose()
+  price: number;
 
   @ApiProperty({
     title: 'Preview',

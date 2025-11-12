@@ -41,15 +41,17 @@ model User {
 }
 
 model Media {
-  id          String       @id @default(cuid())
-  filename    String       @unique
-  fullVersion String       @unique
-  preview     String       @unique
+  id          String @id @default(cuid())
+  filename    String @unique
+  fullVersion String @unique
+  preview     String @unique
   order       Int
-  member      Member       @relation(fields: [memberId], references: [id])
-  memberId    String
-  createdAt   DateTime     @default(now())
-  orderMedia  OrderMedia[]
+  price       Int    @default(400)
+
+  member     Member       @relation(fields: [memberId], references: [id])
+  memberId   String
+  createdAt  DateTime     @default(now())
+  orderMedia OrderMedia[]
 }
 
 model Payment {
@@ -113,6 +115,7 @@ model Speech {
   isGroup Boolean  @default(false)
   flow    Flow     @relation(fields: [flowId], references: [id])
   flowId  String
+  price   Int      @default(2000)
   orders  Order[]
   buyers  User[]
 }
