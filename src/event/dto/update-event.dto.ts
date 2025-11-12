@@ -1,21 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsDateString, IsNumber, IsOptional, IsString } from 'class-validator';
+import { PartialType } from '@nestjs/mapped-types';
+import { CreateEventDto } from './create-event.dto';
 
-export class UpdateEventDto {
-  @ApiProperty({
-    title: 'Name',
-    example: 'Saint-Petersburg International Economics Forum',
-  })
-  @IsOptional()
-  @IsString()
-  name?: string;
-
-  @ApiProperty({
-    title: 'Date',
-    example: '2024-07-02T00:00:00',
-    description: 'Date iso string',
-  })
-  @IsOptional()
-  @IsDateString()
-  date?: string;
-}
+export class UpdateEventDto extends PartialType(CreateEventDto) {}

@@ -1,7 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Media } from '@prisma/client';
-import { Expose } from 'class-transformer';
-import { IsDateString, IsNumber, IsOptional, IsString } from 'class-validator';
+import { Expose, Type } from 'class-transformer';
+import {
+  IsDate,
+  IsDateString,
+  IsNumber,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 import { MediaRdo } from '../../media/rdo/media.rdo';
 
 export class EventRdo {
@@ -22,6 +28,17 @@ export class EventRdo {
   @IsNumber()
   @Expose()
   price: number;
+
+  @ApiProperty({ title: 'Order deadline', example: '2024-07-02T00:00:00' })
+  @Type(() => Date)
+  @IsDate()
+  @Expose()
+  orderDeadline: Date;
+
+  @ApiProperty({ title: 'Location', example: 'Tyumen, Russia' })
+  @IsString()
+  @Expose()
+  location: string;
 
   @ApiProperty({
     title: 'Date',
