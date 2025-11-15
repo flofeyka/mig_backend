@@ -47,6 +47,11 @@ export class OrderService {
             },
           },
         },
+        payment: {
+          select: {
+            amount: true,
+          },
+        },
       },
     });
 
@@ -96,6 +101,11 @@ export class OrderService {
               },
             },
           },
+          payment: {
+            select: {
+              amount: true,
+            },
+          },
         },
         orderBy: {
           createdAt: 'asc',
@@ -128,6 +138,11 @@ export class OrderService {
                 media: true,
               },
             },
+          },
+        },
+        payment: {
+          select: {
+            amount: true,
           },
         },
       },
@@ -203,11 +218,13 @@ export class OrderService {
     order: Order & {
       orderMedia: Array<OrderMedia & { media: Media }>;
       speeches: Array<Speech & { members: Array<Member & { media: Media[] }> }>;
+      payment: { amount: number };
     },
     hasAccess: boolean,
   ) {
     return {
       ...order,
+      amount: order.payment.amount,
       speeches: order.speeches.map((speech) => ({
         id: speech.id,
         members: speech.members.map((member) => ({

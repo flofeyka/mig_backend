@@ -69,7 +69,7 @@ export class BookingRequestController {
   })
   @UseGuards(AuthJwtGuard, AdminGuard)
   async getRequests(@Query() dto: PageDto): Promise<BookingRequestsRdo> {
-    return this.requestService.getRequests(dto.page, dto.page);
+    return this.requestService.getRequests(dto.page, dto.limit);
   }
 
   @Put('/:id')

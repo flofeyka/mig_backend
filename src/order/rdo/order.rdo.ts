@@ -1,5 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, IsEnum, IsString, ValidateNested } from 'class-validator';
+import {
+  IsArray,
+  IsDateString,
+  IsEnum,
+  IsInt,
+  IsString,
+  ValidateNested,
+} from 'class-validator';
 import { Expose, Type } from 'class-transformer';
 import { OrderStatus } from '@prisma/client';
 import { OrderMediaRdo } from './order-media.rdo';
@@ -36,4 +43,14 @@ export class OrderRdo {
   @Type(() => SpeechRdo)
   @Expose()
   speeches: SpeechRdo[];
+
+  @ApiProperty({ title: 'Amount', example: 12351 })
+  @IsInt()
+  @Expose()
+  amount: number;
+
+  @ApiProperty({ title: 'Created at', example: '2025-11-25T18:00:00.000' })
+  @IsDateString()
+  @Expose()
+  createdAt: Date;
 }
