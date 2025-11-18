@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Query,
+  Redirect,
+  UseGuards,
+} from '@nestjs/common';
 import { PaymentService } from './payment.service';
 import { SuccessRdo } from 'common/rdo/success.rdo';
 import { PaymentStatus } from '@prisma/client';
@@ -30,7 +38,8 @@ export class PaymentController {
   }
 
   @Get('success')
-  success(@Query() query: PaymentWebhookDto): Promise<SuccessRdo> {
+  @Redirect(process.env.SUCCESS_REDIRECT_URL, 301)
+  async success(@Query() query: PaymentWebhookDto): Promise<SuccessRdo> {
     return this.paymentService.processPayment(
       query.InvId,
       query.SignatureValue,
