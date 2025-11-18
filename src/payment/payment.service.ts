@@ -1,10 +1,4 @@
-import {
-  BadGatewayException,
-  BadRequestException,
-  Injectable,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadGatewayException, BadRequestException, Injectable, Logger, NotFoundException, } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Order, OrderStatus, Payment, PaymentStatus } from '@prisma/client';
 import { SuccessRdo } from 'common/rdo/success.rdo';
@@ -89,7 +83,8 @@ export class PaymentService {
       ).filter((item) => !!item);
 
       const mediasAmount = foundMedias.reduce(
-        (prev, acc) => prev + acc.price,
+        (prev, acc, index) =>
+          prev + (index !== 0 ? acc.price - 500 : acc.price),
         0,
       );
 
