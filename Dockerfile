@@ -38,4 +38,4 @@ COPY --from=development /usr/src/app/dist ./dist
 
 EXPOSE 3000
 
-CMD ["yarn", "run", "start:prod"]
+CMD ["sh", "-c", "yarn prisma migrate deploy && yarn run start:prod"]

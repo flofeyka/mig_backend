@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Transform, Type } from 'class-transformer';
-import { IsInt, IsOptional, IsString } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsInt, IsOptional, IsString, Min } from 'class-validator';
 
 export class AddMediaDto {
   @ApiProperty({ title: 'Member id', example: 'fgskfdjgq2430gsfg34g' })
@@ -11,5 +11,6 @@ export class AddMediaDto {
   @IsOptional()
   @Type(() => Number)
   @IsInt()
+  @Min(501)
   price: number;
 }
