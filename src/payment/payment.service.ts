@@ -89,13 +89,13 @@ export class PaymentService {
       ).filter((item) => !!item);
 
       const mediasAmount = foundMedias.reduce(
-        (prev, acc, index) =>
-          prev + (index !== 0 ? acc.price - 500 : acc.price),
+        (prev, acc) => prev + acc.price,
         0,
       );
 
       const speechesAmount = foundSpeeches?.reduce(
-        (prev, acc) => prev + acc.price,
+        (prev, acc) =>
+          prev + (foundSpeeches.length !== 1 ? acc.price - 500 : acc.price),
         0,
       );
 
