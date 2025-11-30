@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsBoolean, IsString, ValidateNested } from 'class-validator';
 
-class SpeechDto {
+class MemberDto {
   @IsString()
   id: string;
 }
@@ -15,14 +15,14 @@ class MediaDto {
 }
 
 export class CreatePaymentOrderDto {
-  @ApiProperty({ title: 'Speeches', example: [{ id: '123123' }] })
+  @ApiProperty({ title: 'Members', example: [{ id: '123123' }] })
   @ValidateNested({ each: true })
-  @Type(() => SpeechDto)
-  speeches: SpeechDto[];
+  @Type(() => MemberDto)
+  members: MemberDto[];
 
   @ApiProperty({
     title: 'Medias',
-    example: { id: '1fglksjfgqro90-fsgdsfg', requiresProcessing: true },
+    example: [{ id: '1fglksjfgqro90-fsgdsfg', requiresProcessing: true }],
   })
   @ValidateNested({ each: true })
   @Type(() => MediaDto)

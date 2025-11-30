@@ -64,28 +64,11 @@ export class MemberService {
             }),
           },
         },
-        speech: {
-          select: {
-            ...(userId && {
-              buyers: {
-                where: { id: userId },
-              },
-            }),
-            flow: {
-              select: {
-                event: {
-                  include: {
-                    ...(userId && {
-                      buyers: {
-                        where: { id: userId },
-                      },
-                    }),
-                  },
-                },
-              },
-            },
+        ...(userId && {
+          buyers: {
+            where: { id: userId },
           },
-        },
+        }),
       },
     });
 
@@ -97,13 +80,12 @@ export class MemberService {
       ...member,
       media: member.media.map((media) => {
         const hasBoughtMedia = media.orderMedia?.length > 0;
-        const hasAccessToSpeech = member.speech.flow.event.buyers?.length > 0;
-        const hasAccessToSpeechDirectly = member.speech.buyers?.length > 0;
+        const hasAccessToMembers = member.buyers?.length > 0;
 
         return {
           ...media,
           fullVersion:
-            hasBoughtMedia || hasAccessToSpeech || hasAccessToSpeechDirectly
+            hasBoughtMedia || hasAccessToMembers
               ? media.fullVersion
               : undefined,
         };

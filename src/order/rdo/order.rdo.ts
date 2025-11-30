@@ -10,7 +10,7 @@ import {
 import { Expose, Type } from 'class-transformer';
 import { OrderStatus } from '@prisma/client';
 import { OrderMediaRdo } from './order-media.rdo';
-import { SpeechRdo } from '../../speech/rdo/speech.rdo';
+import { MemberRdo } from '../../member/rdo/member.rdo';
 
 export class OrderRdo {
   @ApiProperty({ title: 'Order ID', example: 'gsjdfjasjk12340fasg' })
@@ -38,11 +38,11 @@ export class OrderRdo {
   @Expose()
   orderMedia: OrderMediaRdo[];
 
-  @ApiProperty({ title: 'Speeches list', type: [SpeechRdo] })
+  @ApiProperty({ title: 'Speeches list', type: [MemberRdo] })
   @ValidateNested({ each: true })
-  @Type(() => SpeechRdo)
+  @Type(() => MemberRdo)
   @Expose()
-  speeches: SpeechRdo[];
+  members: MemberRdo[];
 
   @ApiProperty({ title: 'Amount', example: 12351 })
   @IsInt()

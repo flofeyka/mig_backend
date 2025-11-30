@@ -33,18 +33,17 @@ model User {
   login      String       @unique
   password   String
   token      Token?
-  events     Event[]
   isAdmin    Boolean      @default(false)
   payments   Payment[]
   orderMedia OrderMedia[]
-  speeches   Speech[]
+  members    Member[]
 }
 
 model Media {
   id          String @id @default(cuid())
-  filename    String @unique
-  fullVersion String @unique
-  preview     String @unique
+  filename    String
+  fullVersion String
+  preview     String
   order       Int
   price       Int    @default(400)
 
@@ -96,7 +95,7 @@ model Order {
   status     OrderStatus  @default(WAITING_FOR_PAYMENT)
   createdAt  DateTime     @default(now())
   orderMedia OrderMedia[]
-  speeches   Speech[]
+  members    Member[]
   payment    Payment      @relation(fields: [paymentId], references: [id])
   paymentId  String       @unique
 }
@@ -106,6 +105,8 @@ model Member {
   media    Media[]
   speech   Speech  @relation(fields: [speechId], references: [id])
   speechId String
+  orders   Order[]
+  buyers   User[]
 }
 
 model Speech {
@@ -116,8 +117,6 @@ model Speech {
   flow    Flow     @relation(fields: [flowId], references: [id])
   flowId  String
   price   Int      @default(2000)
-  orders  Order[]
-  buyers  User[]
 }
 
 model Flow {
@@ -135,7 +134,6 @@ model Event {
   id            String    @id @default(cuid())
   name          String
   date          DateTime
-  buyers        User[]
   orderDeadline DateTime?
   location      String    @default("Moscow, Russia")
   createdAt     DateTime  @default(now())
