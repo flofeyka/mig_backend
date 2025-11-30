@@ -32,8 +32,8 @@ export class PaymentController {
     return this.paymentService.generatePaymentUrl(
       user.id,
       dto.medias,
-      dto.speeches,
-      `Покупка ${dto.medias?.length || 0} фотографий и ${dto.speeches?.length} выступлений`,
+      dto.members,
+      `Покупка ${dto.medias?.length || 0} фотографий и ${dto.members?.length} участниц`,
     );
   }
 

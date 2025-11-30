@@ -12,7 +12,6 @@ import {
   OrderMedia,
   OrderStatus,
   Prisma,
-  Speech,
 } from '@prisma/client';
 import { OrdersRdo } from './rdo/orders.rdo';
 import { fillDto } from '../../common/utils/fillDto';
@@ -38,13 +37,9 @@ export class OrderService {
             media: true,
           },
         },
-        speeches: {
+        members: {
           include: {
-            members: {
-              include: {
-                media: true,
-              },
-            },
+            media: true,
           },
         },
         payment: {
@@ -92,13 +87,9 @@ export class OrderService {
               media: true,
             },
           },
-          speeches: {
+          members: {
             include: {
-              members: {
-                include: {
-                  media: true,
-                },
-              },
+              media: true,
             },
           },
           payment: {
@@ -131,13 +122,9 @@ export class OrderService {
             media: true,
           },
         },
-        speeches: {
+        members: {
           include: {
-            members: {
-              include: {
-                media: true,
-              },
-            },
+            media: true,
           },
         },
         payment: {
@@ -178,7 +165,7 @@ export class OrderService {
               media: true,
             },
           },
-          speeches: true,
+          members: true,
         },
       });
 
@@ -194,9 +181,9 @@ export class OrderService {
               },
             }),
           ),
-          ...order.speeches.map((speech) =>
-            this.prisma.speech.update({
-              where: { id: speech.id },
+          ...order.members.map((member) =>
+            this.prisma.member.update({
+              where: { id: member.id },
               data: {
                 buyers: {
                   connect: { id: order.payment.userId },
@@ -217,7 +204,7 @@ export class OrderService {
   private flatOrder(
     order: Order & {
       orderMedia: Array<OrderMedia & { media: Media }>;
-      speeches: Array<Speech & { members: Array<Member & { media: Media[] }> }>;
+      members: Array<Member & { media: Media[] }>;
       payment: { amount: number };
     },
     hasAccess: boolean,
@@ -225,19 +212,17 @@ export class OrderService {
     return {
       ...order,
       amount: order.payment.amount,
-      speeches: order.speeches.map((speech) => ({
-        id: speech.id,
-        members: speech.members.map((member) => ({
-          id: member.id,
-          media: member.media.map((media) => ({
-            id: media.id,
-            fullVersion: hasAccess ? media.fullVersion : null,
-            preview: media.preview,
-            price: media.price,
-            order: media.order,
-          })),
+      members: order.members.map((member) => ({
+        id: member.id,
+        media: member.media.map((media) => ({
+          id: media.id,
+          fullVersion: hasAccess ? media.fullVersion : null,
+          preview: media.preview,
+          price: media.price,
+          order: media.order,
         })),
       })),
+
       orderMedia: order.orderMedia.map((orderMedia) => ({
         id: orderMedia.id,
         media: {

@@ -104,15 +104,4 @@ export class EventService {
 
     return fillDto(EventRdo, event);
   }
-
-  async checkUserAccess(userId: number, eventId: string): Promise<boolean> {
-    const isUserHasAccess = await this.prisma.user.count({
-      where: {
-        id: userId,
-        OR: [{ events: { some: { id: eventId } } }, { isAdmin: true }],
-      },
-    });
-
-    return isUserHasAccess > 0;
-  }
 }

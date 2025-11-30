@@ -12,9 +12,7 @@ import sharp from 'sharp';
 import { StorageType } from 'src/storage/storage.interface';
 import { StorageService } from 'src/storage/storage.service';
 import { v4 as uuid } from 'uuid';
-import { UpdateMediaOrderDto } from './dto/update-media-order.dto';
 import { MediaRdo } from './rdo/media.rdo';
-import { PaymentService } from 'src/payment/payment.service';
 import { OrderMediaRdo } from '../order/rdo/order-media.rdo';
 
 @Injectable()
@@ -24,7 +22,6 @@ export class MediaService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly storageService: StorageService,
-    private readonly paymentService: PaymentService,
   ) {}
 
   async changeOrder(id: string, newOrder: number): Promise<MediaRdo> {
@@ -96,20 +93,6 @@ export class MediaService {
     } catch (e) {
       console.error(e);
       throw new NotFoundException('Member not found');
-    }
-  }
-
-  async updateMedia(id: string, dto: UpdateMediaOrderDto): Promise<MediaRdo> {
-    try {
-      await this.changeOrder(id, dto.order);
-      const updated = await this.prisma.media.update({
-        where: { id },
-        data: dto,
-      });
-      return fillDto(MediaRdo, updated);
-    } catch (e) {
-      console.error(e);
-      throw new NotFoundException('Media not found');
     }
   }
 
@@ -246,24 +229,20 @@ export class MediaService {
   }
 
   async uploadFile(id: string, index: number, file: Express.Multer.File) {
-    const filename = String(index) + '-' + uuid() + '.' + 'png';
+    const filename = String(index) + '-' + file.originalname;
     const [preview, fullVersion] = await Promise.all([
       this.storageService.uploadFile(
         await this.processPreviewImage(file.buffer),
-        String(index) + '-' + uuid() + '.' + 'png',
+        filename,
         {
           folder: `/preview/${id}`,
           storageType: StorageType.S3_PUBLIC,
         },
       ),
-      this.storageService.uploadFile(
-        file.buffer,
-        String(index) + '-' + uuid() + '.' + 'png',
-        {
-          folder: `/original/${id}`,
-          storageType: StorageType.S3_PUBLIC,
-        },
-      ),
+      this.storageService.uploadFile(file.buffer, filename, {
+        folder: `/original/${id}`,
+        storageType: StorageType.S3_PUBLIC,
+      }),
     ]);
     return {
       filename,

@@ -36,24 +36,31 @@ export class PaymentService {
   async generatePaymentUrl(
     userId: number,
     medias: { id: string; requiresProcessing: boolean }[] = [],
-    speeches: { id: string }[] = [],
+    members: { id: string }[] = [],
     description: string,
   ): Promise<string> {
     try {
-      const foundSpeeches = (
+      const foundMembers = (
         await Promise.all(
-          speeches.map(({ id }) =>
-            this.prisma.speech.findUnique({
+          members.map(({ id }) =>
+            this.prisma.member.findUnique({
               where: {
                 id,
                 OR: [
                   {
-                    flow: { event: { orderDeadline: { gte: new Date() } } },
+                    speech: {
+                      flow: { event: { orderDeadline: { gte: new Date() } } },
+                    },
                   },
                   {
-                    flow: { event: { orderDeadline: null } },
+                    speech: {
+                      flow: { event: { orderDeadline: null } },
+                    },
                   },
                 ],
+              },
+              include: {
+                speech: true,
               },
             }),
           ),
@@ -93,13 +100,16 @@ export class PaymentService {
         0,
       );
 
-      const speechesAmount = foundSpeeches?.reduce(
+      const membersAmount = foundMembers?.reduce(
         (prev, acc) =>
-          prev + (foundSpeeches.length !== 1 ? acc.price - 500 : acc.price),
+          prev +
+          (foundMembers.length !== 1
+            ? acc.speech.price - 500
+            : acc.speech.price),
         0,
       );
 
-      const amount = mediasAmount + speechesAmount;
+      const amount = mediasAmount + membersAmount;
 
       if (!amount)
         throw new BadRequestException('Speeches and medias not found');
@@ -128,8 +138,8 @@ export class PaymentService {
                   })),
                 },
               },
-              speeches: {
-                connect: foundSpeeches.map((speech) => ({ id: speech.id })),
+              members: {
+                connect: members.map((speech) => ({ id: speech.id })),
               },
             },
           },
@@ -201,10 +211,6 @@ export class PaymentService {
       where: { systemId },
       include: { order: true },
     });
-  }
-
-  async fetchPayment(id: string): Promise<Payment | null> {
-    return this.prisma.payment.findUnique({ where: { id } });
   }
 
   checkSignature(
