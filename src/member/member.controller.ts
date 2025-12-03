@@ -8,6 +8,7 @@ import {
   Post,
   Put,
   Query,
+  Res,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -28,6 +29,7 @@ import { UserRdo } from 'src/user/rdo/user.rdo';
 import { AuthJwtGuard } from 'src/auth/auth.guard';
 import { OptionalAuth } from 'common/decorators/OptionalAuth';
 import { AdminGuard } from '../user/admin.guard';
+import { type Response } from 'express';
 
 @ApiTags('Member')
 @Controller('/member')
@@ -55,9 +57,19 @@ export class MemberController {
   })
   @Get('/download/:id')
   @UseGuards(AuthJwtGuard)
-  downloadMember(@Param('id') id: string, @User() user: UserRdo): Promise<NodeJS.ReadableStream> {
-    return this.memberService.downloadMember(id, user.id);
-  } 
+  async downloadMember(@Param('id') id: string, @User() user: UserRdo, @Res() res: Response): Promise<void> {
+    const zipStream = await this.memberService.downloadMember(
+      id,
+      user?.id || 1,
+    );
+
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="member-${id}-files.zip"`,
+    );
+    zipStream.pipe(res);
+  }
 
 
   @ApiOperation({ summary: 'Get member by id' })
