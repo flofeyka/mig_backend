@@ -100,7 +100,7 @@ export class MemberService {
 
     if(!member) throw new NotFoundException('Member not found');
 
-    return await this.storageService.getFolderAsZip('original' + '/' + member.id);
+    return await this.storageService.getFolderAsZip('original' + '/' + member.id, StorageType.S3);
   }
 
   async updateMember(

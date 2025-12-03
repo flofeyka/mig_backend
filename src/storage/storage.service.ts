@@ -1,7 +1,7 @@
 import { GetObjectCommand, ListObjectsV2Command, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import * as archiver from 'archiver';
-import { PassThrough } from 'stream';
+import archiver from 'archiver';
+import { PassThrough, Readable } from 'stream';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
@@ -86,48 +86,49 @@ export class StorageService {
   }
 
   async getFolderAsZip(
-  folder: string,
-  storageType: StorageType = StorageType.S3
-): Promise<NodeJS.ReadableStream> {
+    folder: string,
+    storageType: StorageType = StorageType.S3
+  ): Promise<NodeJS.ReadableStream> {
 
-  const config = this.getConfig(storageType) as S3Config;
+    const config = this.getConfig(storageType) as S3Config;
 
-  const prefix = folder.replace(/^\/+|\/+$/g, '') + '/';
+    const prefix = folder.replace(/^\/+|\/+$/g, '') + '/'
+    console.log(prefix);
 
-  const list = await this.s3Client.send(
-    new ListObjectsV2Command({
-      Bucket: config.bucketName,
-      Prefix: prefix,
-    }),
-  );
-
-  if (!list.Contents || list.Contents.length === 0) {
-    throw new Error('Папка пуста или не существует');
-  }
-
-  const zipStream = new PassThrough();
-  const archive = archiver('zip', { zlib: { level: 9 } });
-
-  archive.pipe(zipStream);
-
-  for (const file of list.Contents) {
-    const key = file.Key!;
-    const fileStream = await this.s3Client.send(
-      new GetObjectCommand({
+    const list = await this.s3Client.send(
+      new ListObjectsV2Command({
         Bucket: config.bucketName,
-        Key: key,
+        Prefix: prefix,
       }),
     );
 
-    archive.append(fileStream.Body as NodeJS.ReadableStream, {
-      name: key.replace(prefix, ''),
-    });
+    if (!list.Contents || list.Contents.length === 0) {
+      throw new Error('Папка пуста или не существует');
+    }
+
+    const zipStream = new PassThrough();
+    const archive = archiver('zip', { zlib: { level: 9 } });
+
+    archive.pipe(zipStream);
+
+    for (const file of list.Contents) {
+      const key = file.Key!;
+      const fileStream = await this.s3Client.send(
+        new GetObjectCommand({
+          Bucket: config.bucketName,
+          Key: key,
+        }),
+      );
+
+      archive.append(fileStream.Body as Readable, {
+        name: key.replace(prefix, ''),
+      });
+    }
+
+    archive.finalize();
+
+    return zipStream;
   }
-
-  archive.finalize();
-
-  return zipStream;
-}
 
   private getFullPath(filename: string, folder?: string): string {
     if (!folder) return filename;
