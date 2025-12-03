@@ -32,7 +32,7 @@ import { AdminGuard } from '../user/admin.guard';
 @ApiTags('Member')
 @Controller('/member')
 export class MemberController {
-  constructor(private readonly memberService: MemberService) {}
+  constructor(private readonly memberService: MemberService) { }
 
   @ApiOperation({ summary: 'Create new member' })
   @ApiOkResponse({ type: MemberRdo })
@@ -48,6 +48,17 @@ export class MemberController {
   fetchAllMembers(@Query() dto: PageDto): Promise<MembersRdo> {
     return this.memberService.getAllMembers(dto?.page, dto?.limit);
   }
+
+  @ApiOperation({ summary: 'Download member' })
+  @ApiNotFoundResponse({
+    example: new NotFoundException('Member not found').getResponse(),
+  })
+  @Get('/download/:id')
+  @UseGuards(AuthJwtGuard)
+  downloadMember(@Param('id') id: string, @User() user: UserRdo): Promise<NodeJS.ReadableStream> {
+    return this.memberService.downloadMember(id, user.id);
+  } 
+
 
   @ApiOperation({ summary: 'Get member by id' })
   @ApiOkResponse({ type: MemberRdo })

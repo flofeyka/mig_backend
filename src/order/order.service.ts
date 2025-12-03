@@ -17,12 +17,14 @@ import { OrdersRdo } from './rdo/orders.rdo';
 import { fillDto } from '../../common/utils/fillDto';
 import { SuccessRdo } from '../../common/rdo/success.rdo';
 import { OrderRdo } from './rdo/order.rdo';
+import { StorageService } from 'src/storage/storage.service';
+import { StorageType } from 'src/storage/storage.interface';
 
 @Injectable()
 export class OrderService {
   private readonly logger: Logger = new Logger();
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService, private readonly storageService: StorageService) {}
 
   async getOrder(
     id: string,
@@ -216,7 +218,7 @@ export class OrderService {
         id: member.id,
         media: member.media.map((media) => ({
           id: media.id,
-          fullVersion: hasAccess ? media.fullVersion : null,
+          fullVersion: hasAccess && this.storageService.getPresignedUrl(media.filename, {folder: `/original/${media.memberId}`, storageType: StorageType.S3}),
           preview: media.preview,
           price: media.price,
           order: media.order,
@@ -227,7 +229,7 @@ export class OrderService {
         id: orderMedia.id,
         media: {
           id: orderMedia.media.id,
-          fullVersion: hasAccess ? orderMedia.media.fullVersion : null,
+          fullVersion: hasAccess && this.storageService.getPresignedUrl(orderMedia.media.filename, {folder: `/original/${orderMedia.media.memberId}`, storageType: StorageType.S3}),
           preview: orderMedia.media.preview,
           order: orderMedia.media.order,
           price: orderMedia.media.price,
