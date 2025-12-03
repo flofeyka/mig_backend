@@ -82,7 +82,8 @@ export class MediaService {
       const fileData = await this.uploadFile(memberId, 1, file);
       const media = await this.prisma.media.create({
         data: {
-          ...fileData,
+          preview: fileData.preview,
+          filename: fileData.filename,
           price,
           memberId,
           order: (lastMedia?.order || 0) + 1,
@@ -152,7 +153,7 @@ export class MediaService {
           input: watermarkBuffer,
           top: y,
           left: x,
-          blend: 'overlay',
+          blend: 'over',
         });
       }
     }
@@ -229,23 +230,22 @@ export class MediaService {
   }
 
   async uploadFile(id: string, index: number, file: Express.Multer.File) {
-    const filename = String(index) + '-' + file.originalname;
     const [preview, fullVersion] = await Promise.all([
       this.storageService.uploadFile(
         await this.processPreviewImage(file.buffer),
-        filename,
+        file.originalname,
         {
           folder: `/preview/${id}`,
           storageType: StorageType.S3_PUBLIC,
         },
       ),
-      this.storageService.uploadFile(file.buffer, filename, {
+      this.storageService.uploadFile(file.buffer, file.originalname, {
         folder: `/original/${id}`,
-        storageType: StorageType.S3_PUBLIC,
+        storageType: StorageType.S3,
       }),
     ]);
     return {
-      filename,
+      filename: file.originalname,
       fullVersion,
       order: index,
       preview,

@@ -1,15 +1,15 @@
-import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { GetObjectCommand, ListObjectsV2Command, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import * as archiver from 'archiver';
+import { PassThrough } from 'stream';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
-  LocalConfig,
   S3Config,
   StorageConfig,
   StorageOptions,
-  StorageType,
+  StorageType
 } from './storage.interface';
-import path from 'path';
-import fs from 'fs';
 
 @Injectable()
 export class StorageService {
@@ -61,6 +61,73 @@ export class StorageService {
       forcePathStyle: true,
     });
   }
+
+  async getPresignedUrl(
+    filename: string,
+    options: StorageOptions = {},
+    expiresIn = 3600,
+  ): Promise<string> {
+    const { storageType = StorageType.S3, folder } = options;
+    const config = this.getConfig(storageType);
+
+    const s3Config = config as S3Config;
+    const fullPath = this.getFullPath(filename, folder);
+
+    const command = new GetObjectCommand({
+      Bucket: s3Config.bucketName,
+      Key: fullPath,
+    });
+
+    const url = await getSignedUrl(this.s3Client, command, {
+      expiresIn,
+    });
+
+    return url;
+  }
+
+  async getFolderAsZip(
+  folder: string,
+  storageType: StorageType = StorageType.S3
+): Promise<NodeJS.ReadableStream> {
+
+  const config = this.getConfig(storageType) as S3Config;
+
+  const prefix = folder.replace(/^\/+|\/+$/g, '') + '/';
+
+  const list = await this.s3Client.send(
+    new ListObjectsV2Command({
+      Bucket: config.bucketName,
+      Prefix: prefix,
+    }),
+  );
+
+  if (!list.Contents || list.Contents.length === 0) {
+    throw new Error('Папка пуста или не существует');
+  }
+
+  const zipStream = new PassThrough();
+  const archive = archiver('zip', { zlib: { level: 9 } });
+
+  archive.pipe(zipStream);
+
+  for (const file of list.Contents) {
+    const key = file.Key!;
+    const fileStream = await this.s3Client.send(
+      new GetObjectCommand({
+        Bucket: config.bucketName,
+        Key: key,
+      }),
+    );
+
+    archive.append(fileStream.Body as NodeJS.ReadableStream, {
+      name: key.replace(prefix, ''),
+    });
+  }
+
+  archive.finalize();
+
+  return zipStream;
+}
 
   private getFullPath(filename: string, folder?: string): string {
     if (!folder) return filename;

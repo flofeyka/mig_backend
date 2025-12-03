@@ -5,10 +5,12 @@ import { fillDto } from 'common/utils/fillDto';
 import { CreateMemberDto } from './dto/create-member.dto';
 import { MembersRdo } from './rdo/members.rdo';
 import { UpdateMemberDto } from './dto/update-member.dto';
+import { StorageService } from 'src/storage/storage.service';
+import { StorageType } from 'src/storage/storage.interface';
 
 @Injectable()
 export class MemberService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService, private readonly storageService: StorageService) { }
 
   async createMember(dto: CreateMemberDto): Promise<MemberRdo> {
     const member = await this.prisma.member.create({
@@ -78,7 +80,7 @@ export class MemberService {
 
     return fillDto(MemberRdo, {
       ...member,
-      media: member.media.map((media) => {
+      media: await Promise.all(member.media.map(async (media) => {
         const hasBoughtMedia = media.orderMedia?.length > 0;
         const hasAccessToMembers = member.buyers?.length > 0;
 
@@ -86,11 +88,19 @@ export class MemberService {
           ...media,
           fullVersion:
             hasBoughtMedia || hasAccessToMembers
-              ? media.fullVersion
+              ? await this.storageService.getPresignedUrl(media.filename, { storageType: StorageType.S3, folder: `/original/${media.memberId}` })
               : undefined,
         };
-      }),
+      })),
     });
+  }
+
+  async downloadMember(id: string, userId: number): Promise<NodeJS.ReadableStream> {
+    const member = await this.prisma.member.findUnique({ where: { id, buyers: { some: { id: userId } } } });
+
+    if(!member) throw new NotFoundException('Member not found');
+
+    return await this.storageService.getFolderAsZip('original' + '/' + member.id);
   }
 
   async updateMember(

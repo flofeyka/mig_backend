@@ -42,7 +42,6 @@ model User {
 model Media {
   id          String @id @default(cuid())
   filename    String
-  fullVersion String
   preview     String
   order       Int
   price       Int    @default(400)
