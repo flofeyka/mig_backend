@@ -23,12 +23,15 @@ export class MemberService {
   }
 
   async getAllMembers(
+    speechId: string,
     page: number = 1,
     limit: number = 10,
   ): Promise<MembersRdo> {
+    const where = {speechId};
     const [total, members] = await this.prisma.$transaction([
-      this.prisma.member.count(),
+      this.prisma.member.count({where}),
       this.prisma.member.findMany({
+        where,
         skip: (page - 1) * limit,
         take: limit,
         include: {

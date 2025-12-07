@@ -46,9 +46,9 @@ export class MemberController {
 
   @ApiOperation({ summary: 'Get all members with pagination' })
   @ApiOkResponse({ type: MembersRdo })
-  @Get()
-  fetchAllMembers(@Query() dto: PageDto): Promise<MembersRdo> {
-    return this.memberService.getAllMembers(dto?.page, dto?.limit);
+  @Get('/all/:id')
+  fetchAllMembers(@Param('id') id: string, @Query() dto: PageDto): Promise<MembersRdo> {
+    return this.memberService.getAllMembers(id, dto?.page, dto?.limit);
   }
 
   @ApiOperation({ summary: 'Download member' })

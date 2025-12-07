@@ -43,9 +43,9 @@ export class FlowController {
 
   @ApiOperation({ summary: 'Get all flows' })
   @ApiOkResponse({ type: FlowsRdo })
-  @Get('/all')
-  getAllFlows(@Query() dto: PageDto): Promise<FlowsRdo> {
-    return this.flowService.getAllFlows(dto?.page, dto?.limit);
+  @Get('/all/:id')
+  getAllFlows(@Param('id') id: string, @Query() dto: PageDto): Promise<FlowsRdo> {
+    return this.flowService.getAllFlows(id, dto?.page, dto?.limit);
   }
 
   @ApiOperation({ summary: 'Get flow by id' })

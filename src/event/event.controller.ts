@@ -8,7 +8,9 @@ import {
   Post,
   Put,
   Query,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { EventService } from './event.service';
 import { CreateEventDto } from './dto/create-event.dto';
@@ -24,6 +26,9 @@ import { UpdateEventDto } from './dto/update-event.dto';
 import { SuccessRdo } from 'common/rdo/success.rdo';
 import { AuthJwtGuard } from 'src/auth/auth.guard';
 import { AdminGuard } from '../user/admin.guard';
+import { FileInterceptor } from '@nestjs/platform-express';
+import path from 'path';
+import { diskStorage } from 'multer';
 
 @Controller('event')
 export class EventController {
@@ -53,6 +58,37 @@ export class EventController {
     @Body() dto: UpdateEventDto,
   ): Promise<EventRdo> {
     return this.eventService.updateEvent(id, dto);
+  }
+
+  @ApiOperation({ summary: 'Process zip file' })
+  @ApiOkResponse({ type: SuccessRdo })
+  @UseGuards(AuthJwtGuard, AdminGuard)
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: './common/tmp',
+        filename: (req, file, callback) => {
+          const ext = path.extname(file.originalname);
+
+          if (!ext) {
+            return callback(null, file.originalname + '.zip');
+          }
+
+          callback(null, file.originalname);
+        },
+      }),
+      fileFilter: (req, file, callback) => {
+        const ext = path.extname(file.originalname).toLowerCase();
+        if (ext !== '.zip') {
+          return callback(new Error('Only .zip files are allowed'), false);
+        }
+        callback(null, true);
+      },
+    }),
+  )
+  @Post('/process')
+  processZip(@UploadedFile() file: Express.Multer.File): Promise<SuccessRdo> {
+    return this.eventService.processZip(file.path);
   }
 
   @ApiOperation({ summary: 'Delete an event' })

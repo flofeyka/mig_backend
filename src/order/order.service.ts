@@ -56,7 +56,7 @@ export class OrderService {
 
     return fillDto(
       OrderRdo,
-      this.flatOrder(order, isAdmin || order.status === OrderStatus.APPROVED),
+      await this.flatOrder(order, isAdmin || order.status === OrderStatus.APPROVED),
     );
   }
 
@@ -108,9 +108,9 @@ export class OrderService {
     ]);
 
     return fillDto(OrdersRdo, {
-      orders: orders.map((order) =>
-        this.flatOrder(order, order.status === OrderStatus.APPROVED),
-      ),
+      orders: await Promise.all(orders.map(async (order) =>
+        await this.flatOrder(order, order.status === OrderStatus.APPROVED),
+      )),
       total,
     });
   }
@@ -152,7 +152,7 @@ export class OrderService {
       data: { status: OrderStatus.APPROVED },
     });
 
-    return fillDto(OrderRdo, this.flatOrder(order, true));
+    return fillDto(OrderRdo, await this.flatOrder(order, true));
   }
 
   async changeStatus(id: string, status: OrderStatus): Promise<SuccessRdo> {
@@ -203,7 +203,7 @@ export class OrderService {
     }
   }
 
-  private flatOrder(
+  private async flatOrder(
     order: Order & {
       orderMedia: Array<OrderMedia & { media: Media }>;
       members: Array<Member & { media: Media[] }>;
@@ -214,22 +214,22 @@ export class OrderService {
     return {
       ...order,
       amount: order.payment.amount,
-      members: order.members.map((member) => ({
+      members: await Promise.all(order.members.map(async (member) => ({
         id: member.id,
-        media: member.media.map((media) => ({
+        media:  await Promise.all(member.media.map(async (media) => ({
           id: media.id,
-          fullVersion: hasAccess && this.storageService.getPresignedUrl(media.filename, {folder: `/original/${media.memberId}`, storageType: StorageType.S3}),
+          fullVersion: hasAccess && await this.storageService.getPresignedUrl(media.filename, {folder: `/original/${media.memberId}`, storageType: StorageType.S3}),
           preview: media.preview,
           price: media.price,
           order: media.order,
-        })),
-      })),
+        }))),
+      }))),
 
-      orderMedia: order.orderMedia.map((orderMedia) => ({
+      orderMedia: await Promise.all(order.orderMedia.map(async (orderMedia) => ({
         id: orderMedia.id,
         media: {
           id: orderMedia.media.id,
-          fullVersion: hasAccess && this.storageService.getPresignedUrl(orderMedia.media.filename, {folder: `/original/${orderMedia.media.memberId}`, storageType: StorageType.S3}),
+          fullVersion: hasAccess && await this.storageService.getPresignedUrl(orderMedia.media.filename, {folder: `/original/${orderMedia.media.memberId}`, storageType: StorageType.S3}),
           preview: orderMedia.media.preview,
           order: orderMedia.media.order,
           price: orderMedia.media.price,
@@ -239,7 +239,7 @@ export class OrderService {
           : null,
         processedPreview: hasAccess ? orderMedia.processedPreview : null,
         displayOrder: orderMedia.displayOrder,
-      })),
+      }))),
     };
   }
 }
