@@ -20,10 +20,12 @@ export class FlowService {
     return fillDto(FlowRdo, flow);
   }
 
-  async getAllFlows(page: number = 1, limit: number = 10): Promise<FlowsRdo> {
+  async getAllFlows(eventId: string, page: number = 1, limit: number = 10): Promise<FlowsRdo> {
+    const where = {eventId};
     const [total, flows] = await this.prisma.$transaction([
-      this.prisma.flow.count(),
+      this.prisma.flow.count({where}),
       this.prisma.flow.findMany({
+        where,
         skip: (page - 1) * limit,
         take: limit,
         orderBy: { createdAt: 'desc' },

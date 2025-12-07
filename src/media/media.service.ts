@@ -229,7 +229,7 @@ export class MediaService {
     });
   }
 
-  async uploadFile(id: string, index: number, file: Express.Multer.File) {
+  async uploadFile(id: string, index: number, file: {buffer: Buffer, originalname: string}) {
     const [preview, fullVersion] = await Promise.all([
       this.storageService.uploadFile(
         await this.processPreviewImage(file.buffer),
