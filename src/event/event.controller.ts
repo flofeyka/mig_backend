@@ -65,6 +65,9 @@ export class EventController {
   @UseGuards(AuthJwtGuard, AdminGuard)
   @UseInterceptors(
     FileInterceptor('file', {
+      limits: {
+        fileSize: 10 * 1024 * 1024 * 1024
+      },
       storage: diskStorage({
         destination: './common/tmp',
         filename: (req, file, callback) => {
