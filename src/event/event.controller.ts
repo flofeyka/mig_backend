@@ -29,6 +29,7 @@ import { AdminGuard } from '../user/admin.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
 import path from 'path';
 import { diskStorage } from 'multer';
+import { fillDto } from 'common/utils/fillDto';
 
 @Controller('event')
 export class EventController {
@@ -66,11 +67,12 @@ export class EventController {
   @UseInterceptors(
     FileInterceptor('file', {
       limits: {
-        fileSize: 10 * 1024 * 1024 * 1024
+        fileSize: 10 * 1024 * 1024 * 1024,
       },
       storage: diskStorage({
         destination: './common/tmp',
         filename: (req, file, callback) => {
+          console.log('file', file);
           const ext = path.extname(file.originalname);
 
           if (!ext) {
@@ -81,6 +83,7 @@ export class EventController {
         },
       }),
       fileFilter: (req, file, callback) => {
+        console.log('file filter', file);
         const ext = path.extname(file.originalname).toLowerCase();
         if (ext !== '.zip') {
           return callback(new Error('Only .zip files are allowed'), false);
@@ -90,7 +93,7 @@ export class EventController {
     }),
   )
   @Post('/process')
-  processZip(@UploadedFile() file: Express.Multer.File): Promise<SuccessRdo> {
+  async processZip(@UploadedFile() file: Express.Multer.File): Promise<SuccessRdo> {
     return this.eventService.processZip(file.path);
   }
 

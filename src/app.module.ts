@@ -10,6 +10,7 @@ import { MemberModule } from './member/member.module';
 import { PaymentModule } from './payment/payment.module';
 import { OrderModule } from './order/order.module';
 import { BookingRequestModule } from './booking-request/booking-request.module';
+import { BullModule } from '@nestjs/bullmq';
 
 @Module({
   imports: [
@@ -18,6 +19,12 @@ import { BookingRequestModule } from './booking-request/booking-request.module';
     AuthModule,
     StorageModule,
     ConfigModule.forRoot({ isGlobal: true }),
+    BullModule.forRoot({
+      connection: {
+        host: 'localhost',
+        port: 6379,
+      },
+    }),
     EventModule,
     SpeechModule,
     FlowModule,
